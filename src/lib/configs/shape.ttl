@@ -1,0 +1,68 @@
+@prefix sosa: <http://www.w3.org/ns/sosa/>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+@prefix ex: <http://example.org/>.
+@prefix cidoc: <http://www.cidoc-crm.org/cidoc-crm/>.
+
+# <http://www.cidoc-crm.org/cidoc-crm/P55_has_current_location>
+ex:Location a sh:NodeShape;
+  sh:property [
+    sh:path rdf:type;
+    sh:minCount 1;
+  ], [
+    sh:path <http://purl.org/dc/terms/isPartOf>;
+    sh:node ex:Location;
+  ].
+
+# http://www.cidoc-crm.org/cidoc-crm/P53_has_former_or_current_location
+ex:Shape a sh:NodeShape;
+  sh:property [
+    sh:path sosa:hosts;
+    sh:minCount 1;
+    sh:node [ sh:property [
+      sh:path rdf:type;
+      sh:minCount 1;
+    ] ];
+  ], [
+    sh:path cidoc:P55_has_current_location;
+    sh:minCount 1;
+    sh:node ex:Location;
+  ].
+
+[ ] a sh:NodeShape;
+  sh:targetClass ex:Value;
+  sh:property [
+    sh:maxCount 1;
+    sh:name "numericValue";
+    sh:path <http://qudt.org/1.1/schema/qudt#numericValue>;
+    sh:datatype xsd:integer;
+  ], [
+    sh:maxCount 1;
+    sh:name "valueType";
+    sh:path <http://qudt.org/1.1/schema/qudt#unit>;
+    sh:datatype xsd:string;
+  ].
+
+ex:Measurement a sh:NodeShape;
+  sh:targetClass ex:Measurement;
+  sh:property [
+    sh:path sosa:madeBySensor;
+    sh:node [ sh:property [
+      sh:path [ sh:inversePath sosa:hosts ];
+      sh:node ex:Shape;
+    ] ];
+  ], [
+    sh:class ex:Value;
+    sh:maxCount 1;
+    sh:path <http://def.isotc211.org/iso19156/2011/Observation#OM_Observation.result>;
+    sh:name 'result';
+  ], [
+    sh:path <http://def.isotc211.org/iso19156/2011/Observation#OM_Observation.resultTime>;
+    sh:maxCount 1;
+    sh:name 'date';
+    sh:datatype xsd:dateTime;
+  ].
+

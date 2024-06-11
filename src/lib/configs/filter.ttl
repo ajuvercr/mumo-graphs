@@ -1,0 +1,85 @@
+@prefix dcterms: <http://purl.org/dc/terms/>.
+@prefix cidoc: <http://www.cidoc-crm.org/cidoc-crm/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix sosa: <http://www.w3.org/ns/sosa/>.
+@prefix as: <https://www.w3.org/ns/activitystreams#>.
+@prefix owl: <http://www.w3.org/2002/07/owl#>.
+@prefix csp: <http://vocab.deri.ie/csp#>.
+@prefix tree: <https://w3id.org/tree#>.
+
+# <> a tree:Condition;
+#   tree:relationType tree:EqualToRelation;
+#   tree:value <https://heron.libis.be/momu-test/api/items/33945>;
+#   # tree:value <http://mumo.be/data/sensor/mumo-v2-045>;
+#   tree:path ( sosa:madeBySensor [ sh:inversePath sosa:hosts ] ).
+
+<> a tree:Condition;
+    tree:relationType tree:EqualToRelation;
+    tree:value <https://heron.libis.be/momu-test/api/items/16773>;
+    tree:path (
+      sosa:madeBySensor
+      [ sh:inversePath sosa:hosts ]
+      cidoc:P55_has_current_location
+      [ sh:zeroOrMorePath dcterms:isPartOf ]
+    ).
+
+# <> a tree:And;
+#   tree:alpha [
+#     a tree:Condition;
+#     tree:relationType tree:EqualToRelation;
+#     tree:value <https://heron.libis.be/momu-test/api/items/20337>;
+#     tree:path (
+#       sosa:madeBySensor
+#       [ sh:inversePath sosa:hosts ]
+#       cidoc:P55_has_current_location
+#       [ sh:zeroOrMorePath dcterms:isPartOf ]
+#     );
+#   ];
+
+#   tree:beta [
+#     a tree:Condition;
+#     tree:relationType tree:EqualToRelation;
+#     tree:value "http://qudt.org/1.1/vocab/unit#DegreeCelsius";
+#     # tree:value <http://mumo.be/data/sensor/mumo-v2-045>;
+#     tree:path (
+#       <http://def.isotc211.org/iso19156/2011/Observation#OM_Observation.result>
+#       <http://qudt.org/1.1/schema/qudt#unit>
+#     );
+#   ].
+
+# <> a tree:Or;
+#   tree:alpha [
+#     a tree:And;
+#     tree:alpha [
+#       a tree:Condition;
+#       tree:relationType tree:GreaterThanOrEqualToRelation;
+#       tree:value "2024-05-27T00:00:00Z";
+#       tree:path as:published;
+#       tree:compareType "date";
+#     ];
+#     tree:beta [
+#       a tree:Condition;
+#       tree:relationType tree:LessThanOrEqualToRelation;
+#       tree:value "2024-05-27T23:59:59Z";
+#       tree:path as:published;
+#       tree:compareType "date";
+#     ];
+#   ];
+#   tree:beta [
+#     a tree:And;
+#     tree:alpha [
+#       a tree:Condition;
+#       tree:relationType tree:GreaterThanOrEqualToRelation;
+#       tree:value "2024-05-30T00:00:00Z";
+#       tree:path as:published;
+#       tree:compareType "date";
+#     ];
+#     tree:beta [
+#       a tree:Condition;
+#       tree:relationType tree:LessThanOrEqualToRelation;
+#       tree:value "2024-05-31T12:59:59Z";
+#       tree:path as:published;
+#       tree:compareType "date";
+#     ];
+#   ].
+#
