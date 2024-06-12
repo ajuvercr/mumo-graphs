@@ -1,0 +1,49 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix dcterms: <http://purl.org/dc/terms/>.
+@prefix cidoc: <http://www.cidoc-crm.org/cidoc-crm/>.
+@prefix sosa: <http://www.w3.org/ns/sosa/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix ex: <http://example.org/>.
+@prefix rdfl: <https://w3id.org/rdf-lens/ontology#>.
+
+ex:location ex:path (
+  sosa:madeBySensor
+  [ sh:inversePath sosa:hosts ]
+  cidoc:P55_has_current_location
+  [ sh:zeroOrMorePath dcterms:isPartOf ]
+).
+
+ex:node ex:path ( sosa:madeBySensor [ sh:inversePath sosa:hosts ] ).
+ex:sensor ex:path ( sosa:madeBySensor ).
+#
+#
+[ ] a sh:NodeShape;
+  sh:targetClass _:rdfThing;
+  sh:property [
+    sh:path ( );
+    sh:datatype xsd:iri;
+    sh:maxCount 1;
+    sh:minCount 1;
+    sh:name "entry";
+  ], [
+    sh:path ( );
+    sh:class rdfl:CBD;
+    sh:maxCount 1;
+    sh:minCount 1;
+    sh:name "quads";
+  ].
+
+[ ] a sh:NodeShape;
+  sh:targetClass ex:Path;
+  sh:property [
+    sh:path ex:path;
+    sh:name "lens";
+    sh:class rdfl:PathLens;
+    sh:maxCount 1;
+  ], [
+    sh:path ex:path;
+    sh:name "quads";
+    sh:class _:rdfThing;
+    sh:maxCount 1;
+  ].
+

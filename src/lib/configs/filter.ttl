@@ -14,14 +14,14 @@
 #   tree:path ( sosa:madeBySensor [ sh:inversePath sosa:hosts ] ).
 
 <> a tree:Condition;
-    tree:relationType tree:EqualToRelation;
-    tree:value <https://heron.libis.be/momu-test/api/items/16773>;
-    tree:path (
-      sosa:madeBySensor
-      [ sh:inversePath sosa:hosts ]
-      cidoc:P55_has_current_location
-      [ sh:zeroOrMorePath dcterms:isPartOf ]
-    ).
+  tree:relationType tree:EqualToRelation;
+  tree:value <https://heron.libis.be/momu-test/api/items/16773>;
+  tree:path (
+    sosa:madeBySensor
+    [ sh:inversePath sosa:hosts ]
+    cidoc:P55_has_current_location
+    [ sh:zeroOrMorePath dcterms:isPartOf ]
+  ).
 
 # <> a tree:And;
 #   tree:alpha [
@@ -35,7 +35,6 @@
 #       [ sh:zeroOrMorePath dcterms:isPartOf ]
 #     );
 #   ];
-
 #   tree:beta [
 #     a tree:Condition;
 #     tree:relationType tree:EqualToRelation;
@@ -46,7 +45,6 @@
 #       <http://qudt.org/1.1/schema/qudt#unit>
 #     );
 #   ].
-
 # <> a tree:Or;
 #   tree:alpha [
 #     a tree:And;

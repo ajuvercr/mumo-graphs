@@ -56,7 +56,7 @@
 
 	onMount(async () => {
 		console.log(filter);
-    console.log(data)
+		console.log(data);
 		let shape_quads = new Parser().parse(shape);
 		let condition: Condition | undefined;
 		try {

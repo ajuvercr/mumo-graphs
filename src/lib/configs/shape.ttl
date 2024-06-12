@@ -1,3 +1,4 @@
+@prefix dcterms: <http://purl.org/dc/terms/>.
 @prefix sosa: <http://www.w3.org/ns/sosa/>.
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
@@ -46,6 +47,20 @@ ex:Shape a sh:NodeShape;
     sh:datatype xsd:string;
   ].
 
+[ ] a sh:NodeShape;
+  sh:targetClass ex:Obj;
+  sh:property [
+    sh:maxCount 1;
+    sh:name "id";
+    sh:path ( );
+    sh:datatype xsd:iri;
+  ], [
+    sh:maxCount 1;
+    sh:name "name";
+    sh:path dcterms:title;
+    sh:datatype xsd:string;
+  ].
+
 ex:Measurement a sh:NodeShape;
   sh:targetClass ex:Measurement;
   sh:property [
@@ -64,5 +79,15 @@ ex:Measurement a sh:NodeShape;
     sh:maxCount 1;
     sh:name 'date';
     sh:datatype xsd:dateTime;
+  ], [
+    sh:path sosa:madeBySensor;
+    sh:name "sensor";
+    sh:maxCount 1;
+    sh:class ex:Obj;
+  ], [
+    sh:path ( sosa:madeBySensor [ sh:inversePath sosa:hosts ] );
+    sh:name "node";
+    sh:maxCount 1;
+    sh:class ex:Obj;
   ].
 
