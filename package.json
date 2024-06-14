@@ -12,7 +12,6 @@
 		"format": "prettier --write ."
 	},
 	"devDependencies": {
-		"@inrupt/solid-client-authn-browser": "^2.2.1",
 		"@inrupt/solid-client-authn-node": "^2.2.1",
 		"@rdfjs/types": "^1.1.0",
 		"@sveltejs/adapter-auto": "^3.0.0",
@@ -25,6 +24,7 @@
 		"@types/node-fetch": "^2.6.4",
 		"@typescript-eslint/eslint-plugin": "^7.0.0",
 		"@typescript-eslint/parser": "^7.0.0",
+    "@ajuvercr/mumo-pipeline": "1.0.3-alpha.1",
 		"autoprefixer": "^10.4.19",
 		"chart.js": "^4.4.3",
 		"chartjs-plugin-zoom": "^2.0.1",
@@ -36,7 +36,7 @@
 		"flowbite-svelte": "^0.46.1",
 		"flowbite-svelte-icons": "^1.6.1",
 		"jsonld": "^8.3.2",
-		"ldes-client": "0.0.10-alpha.2 ",
+		"ldes-client": "0.0.10-alpha.3",
 		"n3": "^1.16.4",
 		"postcss": "^8.4.38",
 		"prettier": "^3.1.1",

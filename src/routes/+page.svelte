@@ -3,7 +3,6 @@
 	import LdesGraph from '$lib/components/LdesGraph.svelte';
 
 	import { Location, Sensor } from '$lib/paths.ts';
-	import { fetch_f } from '$lib/components/login';
 	import { onMount } from 'svelte';
 	import type { Node } from '@ajuvercr/mumo-pipeline';
 	import type { Config } from '$lib/components/config/LdesConfig.svelte';

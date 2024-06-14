@@ -1,37 +1,32 @@
 <script lang="ts">
-	import { getDefaultSession, handleIncomingRedirect } from '@inrupt/solid-client-authn-browser';
-	// import { name, setSession, isLoggedIn, login_f, logout_f } from './login';
-
 	import { onMount } from 'svelte';
 	import { Button, Span } from 'flowbite-svelte';
+	import { derived, writable } from 'svelte/store';
 
-	// onMount(async () => {
-	// 	console.log('Logie on mount');
-	//
-	// 	// debugger;
-	// 	const session = await handleIncomingRedirect(); // no-op if not part of login redirect
-	// 	if (session && session.isLoggedIn) {
-	// 		window.localStorage.setItem('SESSION', JSON.stringify(session));
-	// 	}
-	// 	const this_session = getDefaultSession();
-	//
-	// 	// const url = new URL(window.location.href);
-	// 	// localStorage.setItem("redirect", "");
-	//
-	// 	setSession(this_session);
-	// 	console.log('Info', this_session.info);
-	// });
+	const profile = writable<{ isLoggedIn: boolean; webId?: string }>({ isLoggedIn: false });
+	profile.subscribe(console.log);
+	const loggedIn = derived(profile, (x) => x.isLoggedIn);
+
+	onMount(async () => {
+		const respo = await fetch('/api/profile');
+		profile.set(await respo.json());
+	});
 
 	function login_f() {
 		window.location.href = '/login';
 	}
+
+	function logout() {
+		window.location.href = '/logout';
+	}
 </script>
 
-<!-- {#if $isLoggedIn} -->
-<!-- 	<div class="flex items-center gap-4"> -->
-<!-- 		<Span>{$name}</Span> -->
-<!-- 		<Button on:click={logout_f}>Logout</Button> -->
-<!-- 	</div> -->
-<!-- {:else} -->
-<Button on:click={login_f}>Login</Button>
-<!-- {/if} -->
+{#if $loggedIn}
+	<div class="gap-6 items-center flex">
+		<Span>{$profile.webId}</Span>
+		<Button on:click={logout}>Logout</Button>
+	</div>
+{:else}
+	<Button on:click={login_f}>Login</Button>
+{/if}
+

@@ -1,4 +1,4 @@
-import { getSessionFromStorage } from '@inrupt/solid-client-authn-node';
+import { getSession } from '$lib/auth';
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
 
@@ -6,8 +6,7 @@ export const GET: RequestHandler = async ({ cookies, request }) => {
   const url = new URL(request.url);
   const proxy = url.searchParams.get('proxy');
 
-  const sessionId = cookies.get('session')!;
-  const session = await getSessionFromStorage(sessionId);
+  const session = await getSession(cookies);
   const fetch_f = session ? session.fetch.bind(session) : fetch;
 
   if (!proxy) {
@@ -17,6 +16,8 @@ export const GET: RequestHandler = async ({ cookies, request }) => {
   }
 
   const newUrl = decodeURIComponent(proxy);
+
+  console.log(session?.info.sessionId, newUrl);
 
   try {
     const response = await fetch_f(newUrl, {
