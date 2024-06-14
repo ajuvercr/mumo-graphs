@@ -1,5 +1,5 @@
 import type { DeepPartial } from '@svelteuidev/core';
-import type { ChartData, ChartOptions, DefaultDataPoint } from 'chart.js';
+import type { ChartData, ChartOptions, DecimationOptions, DefaultDataPoint } from 'chart.js';
 import type { ZoomPluginOptions } from 'chartjs-plugin-zoom/types/options';
 
 export type ScatterData = ChartData<'scatter', DefaultDataPoint<'scatter'>, string>;
@@ -24,7 +24,12 @@ export type ScatterData = ChartData<'scatter', DefaultDataPoint<'scatter'>, stri
 //   ]
 // };
 
-export const options: DeepPartial<ChartOptions & { plugins: { zoom: ZoomPluginOptions } }> = {
+export const options: DeepPartial<
+  ChartOptions & {
+    plugins: { zoom: ZoomPluginOptions; decimation: DecimationOptions };
+  }
+> = {
+  animation: false,
   datasets: {
     scatter: {
       fill: true,
@@ -45,6 +50,11 @@ export const options: DeepPartial<ChartOptions & { plugins: { zoom: ZoomPluginOp
     }
   },
   plugins: {
+    decimation: {
+      enabled: true,
+      algorithm: 'lttb'
+      // Other configuration options
+    },
     zoom: {
       pan: {
         enabled: true,

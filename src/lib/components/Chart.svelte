@@ -20,11 +20,14 @@
 		type BubbleDataPoint,
 		type ChartTypeRegistry,
 		TimeScale,
-		TimeSeriesScale
+		TimeSeriesScale,
+		Decimation
 	} from 'chart.js';
-	import { onMount } from 'svelte';
+
+	import zoomPlugin from 'chartjs-plugin-zoom';
 
 	ChartJS.register(
+		Decimation,
 		LinearScale,
 		CategoryScale,
 		BarElement,
@@ -36,7 +39,8 @@
 		Tooltip,
 		LineController,
 		BarController,
-		ScatterController
+		ScatterController,
+		zoomPlugin
 	);
 	// function triggerTooltip(chart: ChartJS) {
 	// 	const tooltip = chart && chart.tooltip;
@@ -65,10 +69,6 @@
 		unknown
 	>;
 	export let data: ScatterData;
-	onMount(async () => {
-		const zoomPlugin = await import('chartjs-plugin-zoom');
-		ChartJS.register(<any>zoomPlugin);
-	});
 </script>
 
 <Chart bind:chart type="bar" {data} {options} />

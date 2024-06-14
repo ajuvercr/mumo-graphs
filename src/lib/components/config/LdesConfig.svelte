@@ -3,37 +3,21 @@
 		name: string;
 		url: string;
 
-		location: { value: string; label: string }[];
+		location: { value: string; name: string }[];
 		node?: string[];
 		type?: string[];
 	};
 </script>
 
 <script lang="ts">
-	import {
-		Input,
-		Label,
-		Helper,
-		Button,
-		Card,
-		CloseButton,
-		ButtonGroup,
-		Dropdown,
-		DropdownItem
-	} from 'flowbite-svelte';
-	import { ChevronDownOutline } from 'flowbite-svelte-icons';
+	import MyMultiSelect from './MyMultiSelect.svelte';
+	import { Input, Label, Button, MultiSelect } from 'flowbite-svelte';
+	import type { MultiSelectEvents } from 'flowbite-svelte/MultiSelect.svelte';
 	import { createEventDispatcher } from 'svelte';
 
-	export let locations = [
-		{ label: 'Casino Kursaal', value: 'https://heron.libis.be/momu-test/api/items/20337' },
-		{ label: 'LZ.UNIT.78', value: 'https://heron.libis.be/momu-test/api/items/16773' }
-	];
+	export let locations: { name: string; value: string }[];
 
-	export const config: Config = {
-		name: '',
-		url: 'https://mumo.ilabt.imec.be/ldes/sds/root',
-		location: [locations[0]]
-	};
+	export let config: Config;
 
 	const dispatch = createEventDispatcher<{ change: Config }>();
 
@@ -43,21 +27,17 @@
 		dispatch('change', config);
 	}
 
-	let emptyLocation = locations[0];
-	function addLocation() {
-		config.location = [emptyLocation, ...config.location];
-		emptyLocation = locations[0];
-	}
+	// let thisSelected = config.location;
+	console.log('thisselected', JSON.stringify(config.location.slice(0, 2)));
+	// thisSelected = locations.slice(0, 2);
+	console.log('thisselected', JSON.stringify(locations.slice(0, 2)));
 
-	function removeLocation(id: number) {
-		console.log('removing id', id);
-		config.location.splice(id, 1);
-		config.location = [...config.location];
-		console.log(config.location);
-	}
+	let selectItems = locations.map((x) => ({ name: x.name, value: x }));
+	$: selectItems = locations.map((x) => ({ name: x.name, value: x }));
+	$: console.log('current', config.location);
 </script>
 
-<div class="mb-6 grid gap-6">
+<div class="mt-6 grid gap-6 md:grid-cols-2">
 	<div>
 		<Label for="name" class="mb-2">Graph Name</Label>
 		<Input type="text" id="name" placeholder="EpicName" bind:value={config.name} />
@@ -67,40 +47,10 @@
 		<Input type="text" id="url" placeholder="Url" bind:value={config.url} />
 	</div>
 
-	<div>
-		Location:
-		<ButtonGroup>
-			<Button color="alternative"
-				>{emptyLocation.label}<ChevronDownOutline
-					class="ms-2 h-6 w-6 text-white dark:text-white"
-				/></Button
-			>
-			<Button on:click={addLocation} color="primary">Add</Button>
-		</ButtonGroup>
-
-		<Dropdown classContainer="w-40">
-			{#each locations as thing, i}
-				<DropdownItem
-					active={i == 0}
-					on:click={() => {
-						emptyLocation = thing;
-					}}
-					class={emptyLocation.value === thing.value ? 'underline' : ''}
-				>
-					{thing.label}
-				</DropdownItem>
-			{/each}
-		</Dropdown>
+	<div class="my-4">
+		<Label for="locations" class="mb-2">Location</Label>
+		<MyMultiSelect id="locations" items={locations} bind:value={config.location} />
 	</div>
-
-	{#each config.location as _, i}
-		<div>
-			<ButtonGroup>
-				<Input type="text" bind:value={config.location[i].label} />
-				<CloseButton on:click={() => removeLocation(i)} />
-			</ButtonGroup>
-		</div>
-	{/each}
 </div>
 
-<Button on:click={validate} class="w-fit">Validate!</Button>
+<Button on:click={validate} class="w-fit">Save!</Button>

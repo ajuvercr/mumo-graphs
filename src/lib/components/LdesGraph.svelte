@@ -2,29 +2,37 @@
 	import type { Node } from '@ajuvercr/mumo-pipeline';
 	import Chart from './Chart.svelte';
 	import type { ScatterData } from '$lib/components/data';
-	import { Client, empty_condition, replicateLDES, type Member } from 'ldes-client';
+	import { empty_condition, replicateLDES, type Member } from 'ldes-client';
 	import {
 		Chart as ChartJS,
 		type Point,
 		type BubbleDataPoint,
 		type ChartTypeRegistry
 	} from 'chart.js';
-	import { Input, Label, Helper, Button, Card } from 'flowbite-svelte';
+	import { Button, ButtonGroup, Card } from 'flowbite-svelte';
 	import shape from '$lib/configs/shape.ttl?raw';
 	import LdesConfig, { type Config } from './config/LdesConfig.svelte';
-	import { LeafCondition, OrCondition } from 'ldes-client/dist/lib/condition';
+	import { LeafCondition, OrCondition, type Condition } from 'ldes-client/dist/lib/condition';
 	import { Location } from '$lib/paths';
-	import { myFetch, type Measurement } from '$lib/utils';
+	import { fetch_f, type Measurement } from '$lib/utils';
 	import { TREE } from '@treecg/types';
 	import { extractShapes } from 'rdf-lens';
 	import { NamedNode, Parser } from 'n3';
+	import { createEventDispatcher } from 'svelte';
+
+	const dispatch = createEventDispatcher<{ change: Config; delete: Config }>();
 
 	export let nodes: Node[];
 
+	export let config: Config = {
+		name: '',
+		// url: 'https://mumo.ilabt.imec.be/ldes/sds/root',
+		url: 'http://localhost:3000/ldes/default/root',
+		location: []
+	};
+
 	const shape_quads = new Parser().parse(shape);
 	const lensCache = extractShapes(shape_quads);
-
-	let running = false;
 
 	let charts: {
 		type: string;
@@ -38,12 +46,12 @@
 
 	const colors = [
 		'#ea5545',
-		'#f46a9b',
 		'#ef9b20',
-		'#edbf33',
-		'#ede15b',
-		'#bdcf32',
 		'#87bc45',
+		'#edbf33',
+		'#f46a9b',
+		'#bdcf32',
+		'#ede15b',
 		'#27aeef',
 		'#b33dc6'
 	];
@@ -56,6 +64,31 @@
 		}
 
 		return colors[idx % colors.length];
+	}
+
+	function getCondition(): Condition {
+		let out = empty_condition();
+		if (config.location.length > 0) {
+			const leafs: Condition[] = config.location.map(
+				(loc) =>
+					new LeafCondition({
+						path: Location.lens,
+						pathQuads: Location.quads,
+						value: loc.value,
+						relationType: TREE.terms.EqualToRelation
+					})
+			);
+
+			console.log(leafs.map((x) => x.toString()));
+
+			if (leafs.length > 1) {
+				out = leafs.reduce((alpha, beta) => new OrCondition({ alpha, beta }));
+			} else {
+				out = leafs[0];
+			}
+		}
+		console.log('condition', out.toString());
+		return out;
 	}
 
 	function addMeasurement(measurement: Measurement) {
@@ -81,11 +114,12 @@
 		let dataset = chart.graphData.datasets.find((x) => x.label === measurement.sensor.name);
 		if (!dataset) {
 			dataset = {
-				borderColor: sensorColor(measurement.sensor.name),
+				borderColor: sensorColor(measurement.node.name),
 				type: 'scatter',
 				label: measurement.sensor.name,
 				data: <Point[]>[],
-				borderWidth: 2
+				borderWidth: 2,
+				pointStyle: false
 			};
 			chart.graphData.datasets.push(dataset);
 		}
@@ -123,82 +157,86 @@
 				break;
 			}
 
+			// await new Promise((res) => setTimeout(res, 20));
 			el = await stream.read();
 		}
 
 		updateChart();
 	}
 
-	let url = 'https://mumo.ilabt.imec.be/ldes/sds/root';
 	let timeout: NodeJS.Timeout;
 
-	let condition = empty_condition();
-
 	function toggle() {
-		if (running) {
-			if (stream) stream.cancel();
-			if (timeout) clearTimeout(timeout);
-		} else {
-			count = 0;
-			charts = [];
-			const client = replicateLDES({
-				url,
-				condition,
-				shape: {
-					quads: shape_quads,
-					shapeId: new NamedNode('http://example.org/Measurement')
-				},
-				fetch: myFetch
-			});
-			// Maybe this is not working
-			charts.forEach((chart) => (chart.graphData.datasets = []));
-			console.log('Created client');
-
-			timeout = setInterval(updateChart, 1000);
-			stream = client.stream().getReader();
-			readStream();
-		}
-		running = !running;
+		open = !open;
 	}
 
-	function changed(x: Config) {
-		url = x.url;
-		console.log(x, x.location);
-		if (x.location.length > 0) {
-			const leafs = x.location.map(
-				(loc) =>
-					new LeafCondition({
-						path: Location.lens,
-						pathQuads: Location.quads,
-						value: loc.value,
-						relationType: TREE.terms.EqualToRelation
-					})
-			);
-
-			console.log(leafs.map((x) => x.toString()));
-
-			if (leafs.length > 1) {
-				condition = leafs.reduce((alpha, beta) => new OrCondition({ alpha, beta }));
-			} else {
-				condition = leafs[0];
-			}
-		}
-
-		console.log(condition.toString());
-		toggle();
+	function deleteIt() {
+		dispatch('delete', config);
 	}
+
+	async function changed(x: Config) {
+		dispatch('change', x);
+
+		if (stream) stream.cancel();
+		if (timeout) clearTimeout(timeout);
+
+		count = 0;
+		charts = [];
+		const client = replicateLDES({
+			url: config.url,
+			condition: getCondition(),
+			shape: {
+				quads: shape_quads,
+				shapeId: new NamedNode('http://example.org/Measurement')
+			},
+			fetch: fetch_f
+		});
+		// Maybe this is not working
+		charts.forEach((chart) => (chart.graphData.datasets = []));
+		console.log('Created client');
+
+		timeout = setInterval(updateChart, 1000);
+		stream = client.stream().getReader();
+		readStream();
+	}
+
+	const locations = [
+		{ name: '1 - Atelier White box', value: 'https://heron.libis.be/momu/api/items/222333' },
+		{ name: '4 - Fotostudio', value: 'https://heron.libis.be/momu/api/items/222291' },
+		{ name: '0 - Vaste opstelling', value: 'https://heron.libis.be/momu/api/items/222321' },
+		{ name: '1 - Quarantaineruimte', value: 'https://heron.libis.be/momu/api/items/222309' },
+		{ name: '2 - Leeszaal Bibliotheek', value: 'https://heron.libis.be/momu/api/items/16686' },
+		{ name: '2 - Depot Bibliotheek', value: 'https://heron.libis.be/momu/api/items/222303' },
+		{ name: 'MoMu', value: 'https://heron.libis.be/momu/api/items/16685' }
+	];
+
+	let open = true;
 </script>
 
-<main>
-	{#if running}
-		<p>Running {running} {count} items</p>
-		{#each charts as chart}
+<Card class="relative m-5" size="lg">
+	<div class="flex items-center justify-between">
+		<div>
+			<span class="text-3xl font-bold text-gray-900 dark:text-white">{config.name}</span>
+			<p class="font-light dark:text-white">{count} items</p>
+		</div>
+		<ButtonGroup>
+			<Button on:click={deleteIt}>Delete</Button>
+			<Button on:click={toggle}>Configure!</Button>
+		</ButtonGroup>
+	</div>
+
+	{#each charts as chart}
+		<div class="my-4">
 			<h3>{chart.type}</h3>
 			<Chart bind:chart={chart.node} data={chart.graphData} />
-		{/each}
-		<!-- <Chart bind:chart data={graphData} /> -->
-		<Button on:click={toggle}>Configure!</Button>
-	{:else}
-		<LdesConfig on:change={(x) => changed(x.detail)} />
+		</div>
+	{/each}
+
+	{#if open}
+		<hr />
+		<LdesConfig bind:config on:change={(x) => changed(x.detail)} {locations} />
 	{/if}
-</main>
+</Card>
+
+<style>
+</style>

@@ -12,6 +12,8 @@
 		"format": "prettier --write ."
 	},
 	"devDependencies": {
+		"@inrupt/solid-client-authn-browser": "^2.2.1",
+		"@inrupt/solid-client-authn-node": "^2.2.1",
 		"@rdfjs/types": "^1.1.0",
 		"@sveltejs/adapter-auto": "^3.0.0",
 		"@sveltejs/kit": "^2.0.0",

@@ -12,7 +12,6 @@
 #   tree:value <https://heron.libis.be/momu-test/api/items/33945>;
 #   # tree:value <http://mumo.be/data/sensor/mumo-v2-045>;
 #   tree:path ( sosa:madeBySensor [ sh:inversePath sosa:hosts ] ).
-
 <> a tree:Condition;
   tree:relationType tree:EqualToRelation;
   tree:value <https://heron.libis.be/momu-test/api/items/16773>;
