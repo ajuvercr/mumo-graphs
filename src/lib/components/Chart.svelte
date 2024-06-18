@@ -24,7 +24,7 @@
 		Decimation
 	} from 'chart.js';
 
-	import zoomPlugin from 'chartjs-plugin-zoom';
+	// import zoomPlugin from 'chartjs-plugin-zoom';
 
 	ChartJS.register(
 		Decimation,
@@ -40,7 +40,7 @@
 		LineController,
 		BarController,
 		ScatterController,
-		zoomPlugin
+		// zoomPlugin
 	);
 	// function triggerTooltip(chart: ChartJS) {
 	// 	const tooltip = chart && chart.tooltip;
@@ -71,4 +71,13 @@
 	export let data: ScatterData;
 </script>
 
-<Chart bind:chart type="bar" {data} {options} />
+<div class="wrapper">
+	<Chart bind:chart type="bar" {data} {options} height="200px" width="600px" />
+</div>
+
+<style>
+	.wrapper {
+		max-height: 220px;
+    width: 100%;
+	}
+</style>

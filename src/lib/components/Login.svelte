@@ -2,22 +2,22 @@
 	import { onMount } from 'svelte';
 	import { Button, Span } from 'flowbite-svelte';
 	import { derived, writable } from 'svelte/store';
-
+    import { base } from '$app/paths';
 	const profile = writable<{ isLoggedIn: boolean; webId?: string }>({ isLoggedIn: false });
 	profile.subscribe(console.log);
 	const loggedIn = derived(profile, (x) => x.isLoggedIn);
 
 	onMount(async () => {
-		const respo = await fetch('/api/profile');
+		const respo = await fetch(base + '/api/profile');
 		profile.set(await respo.json());
 	});
 
 	function login_f() {
-		window.location.href = '/login';
+		window.location.href = base + '/login';
 	}
 
 	function logout() {
-		window.location.href = '/logout';
+		window.location.href = base+ '/logout';
 	}
 </script>
 

@@ -7,7 +7,7 @@ export const GET: RequestHandler = async ({ cookies, request }) => {
   const proxy = url.searchParams.get('proxy');
 
   const session = await getSession(cookies);
-  const fetch_f = session ? session.fetch.bind(session) : fetch;
+  const fetch_f = session?.info.isLoggedIn ? session.fetch.bind(session) : fetch;
 
   if (!proxy) {
     return error(400, {

@@ -1,3 +1,4 @@
+import { base } from '$app/paths';
 import { getSession } from '$lib/auth';
 import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
@@ -13,5 +14,5 @@ export const GET: RequestHandler = async ({ cookies, request }) => {
     console.log('session is undefined');
   }
 
-  return redirect(302, '/');
+  return redirect(302, base);
 };

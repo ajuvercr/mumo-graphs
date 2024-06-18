@@ -14,7 +14,11 @@ ex:location ex:path (
 ).
 
 ex:node ex:path ( sosa:madeBySensor [ sh:inversePath sosa:hosts ] ).
-ex:sensor ex:path ( sosa:madeBySensor ).
+ex:sensor ex:path (
+  <http://def.isotc211.org/iso19156/2011/Observation#OM_Observation.result>
+  <http://qudt.org/1.1/schema/qudt#unit>
+).
+
 #
 #
 [ ] a sh:NodeShape;

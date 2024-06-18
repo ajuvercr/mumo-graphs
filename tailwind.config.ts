@@ -3,7 +3,8 @@ import type { Config } from 'tailwindcss';
 const config: Config = {
 	content: [
 		'./src/**/*.{html,js,svelte,ts}',
-		'./node_modules/flowbite-svelte/**/*.{html,js,svelte,ts}'
+		'./node_modules/flowbite-svelte/**/*.{html,js,svelte,ts}',
+        "./node_modules/flowbite-svelte-icons/**/*.{html,js,svelte,ts}",
 	],
 	safelist: ['dark'],
 	plugins: [require('flowbite/plugin')],

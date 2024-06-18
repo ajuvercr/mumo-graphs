@@ -2,10 +2,12 @@ import { getSession, getSessionId, removeSessionId, setSessionId } from '$lib/au
 import { Session } from '@inrupt/solid-client-authn-node';
 import { error, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
+    import { base } from '$app/paths';
 
 export const GET: RequestHandler = async ({ cookies, request }) => {
+  console.log("request url",request.url);
   const url = new URL(request.url);
-  url.pathname = '/redirect';
+  url.pathname = base + '/redirect';
 
   const currentSessionId = getSessionId(cookies);
   const currentSession = await getSession(cookies);

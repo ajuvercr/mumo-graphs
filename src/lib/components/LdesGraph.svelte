@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { Node } from '@ajuvercr/mumo-pipeline';
 	import Chart from './Chart.svelte';
 	import type { ScatterData } from '$lib/components/data';
 	import { empty_condition, replicateLDES, type Member } from 'ldes-client';
@@ -9,26 +8,31 @@
 		type BubbleDataPoint,
 		type ChartTypeRegistry
 	} from 'chart.js';
-	import { Button, ButtonGroup, Card } from 'flowbite-svelte';
+	import { Accordion, AccordionItem, Card } from 'flowbite-svelte';
 	import shape from '$lib/configs/shape.ttl?raw';
 	import LdesConfig, { type Config } from './config/LdesConfig.svelte';
-	import { LeafCondition, OrCondition, type Condition } from 'ldes-client/dist/lib/condition';
-	import { Location } from '$lib/paths';
-	import { fetch_f, type Measurement } from '$lib/utils';
+	import {
+		AndCondition,
+		LeafCondition,
+		OrCondition,
+		type Condition
+	} from 'ldes-client/dist/lib/condition';
+	import { Location, Node, Sensor } from '$lib/paths';
+	import { fetch_f, addToast, type Measurement } from '$lib/utils';
 	import { TREE } from '@treecg/types';
 	import { extractShapes } from 'rdf-lens';
 	import { NamedNode, Parser } from 'n3';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
+	import { PlayOutline, TrashBinOutline } from 'flowbite-svelte-icons';
 
 	const dispatch = createEventDispatcher<{ change: Config; delete: Config }>();
 
-	export let nodes: Node[];
-
 	export let config: Config = {
 		name: '',
-		// url: 'https://mumo.ilabt.imec.be/ldes/sds/root',
 		url: 'http://localhost:3000/ldes/default/root',
-		location: []
+		location: [],
+		nodes: [],
+		types: []
 	};
 
 	const shape_quads = new Parser().parse(shape);
@@ -55,6 +59,7 @@
 		'#27aeef',
 		'#b33dc6'
 	];
+
 	const colorNames: string[] = [];
 	function sensorColor(sensor: string): string {
 		let idx = colorNames.indexOf(sensor);
@@ -67,7 +72,8 @@
 	}
 
 	function getCondition(): Condition {
-		let out = empty_condition();
+		console.log('Config', config);
+		const conditions: Condition[] = [];
 		if (config.location.length > 0) {
 			const leafs: Condition[] = config.location.map(
 				(loc) =>
@@ -82,13 +88,53 @@
 			console.log(leafs.map((x) => x.toString()));
 
 			if (leafs.length > 1) {
-				out = leafs.reduce((alpha, beta) => new OrCondition({ alpha, beta }));
-			} else {
-				out = leafs[0];
+				conditions.push(leafs.reduce((alpha, beta) => new OrCondition({ alpha, beta })));
+			} else if (leafs.length === 1) {
+				conditions.push(leafs[0]);
 			}
 		}
-		console.log('condition', out.toString());
-		return out;
+
+		if (config.nodes.length > 0) {
+			const leafs: Condition[] = config.nodes.map(
+				(loc) =>
+					new LeafCondition({
+						path: Node.lens,
+						pathQuads: Node.quads,
+						value: loc.value,
+						relationType: TREE.terms.EqualToRelation
+					})
+			);
+
+			if (leafs.length > 1) {
+				conditions.push(leafs.reduce((alpha, beta) => new OrCondition({ alpha, beta })));
+			} else if (leafs.length === 1) {
+				conditions.push(leafs[0]);
+			}
+		}
+
+		if (config.types.length > 0) {
+			const leafs: Condition[] = config.types.map(
+				(loc) =>
+					new LeafCondition({
+						path: Sensor.lens,
+						pathQuads: Sensor.quads,
+						value: loc.value,
+						relationType: TREE.terms.EqualToRelation
+					})
+			);
+
+			if (leafs.length > 1) {
+				conditions.push(leafs.reduce((alpha, beta) => new OrCondition({ alpha, beta })));
+			} else if (leafs.length === 1) {
+				conditions.push(leafs[0]);
+			}
+		}
+
+		console.log('here', conditions);
+
+		if (conditions.length === 0) return empty_condition();
+		if (conditions.length === 1) return conditions[0];
+		return conditions.reduce((alpha, beta) => new AndCondition({ alpha, beta }));
 	}
 
 	function addMeasurement(measurement: Measurement) {
@@ -161,30 +207,30 @@
 			el = await stream.read();
 		}
 
+		addToast('Ingestion is done!');
+
 		updateChart();
 	}
 
 	let timeout: NodeJS.Timeout;
 
-	function toggle() {
-		open = !open;
-	}
-
 	function deleteIt() {
 		dispatch('delete', config);
 	}
 
-	async function changed(x: Config) {
-		dispatch('change', x);
+	async function changed() {
+		dispatch('change', config);
 
 		if (stream) stream.cancel();
 		if (timeout) clearTimeout(timeout);
 
 		count = 0;
 		charts = [];
+		const condition = getCondition();
+		console.log('condition', condition.toString());
 		const client = replicateLDES({
 			url: config.url,
-			condition: getCondition(),
+			condition,
 			shape: {
 				quads: shape_quads,
 				shapeId: new NamedNode('http://example.org/Measurement')
@@ -210,33 +256,98 @@
 		{ name: 'MoMu', value: 'https://heron.libis.be/momu/api/items/16685' }
 	];
 
-	let open = true;
+	const types = [
+		{ name: 'Temperatuur', value: 'http://qudt.org/1.1/vocab/unit#DegreeCelsius' },
+		{ name: 'Relatieve Vochtigheid', value: 'http://qudt.org/1.1/vocab/unit#RelHumidity' }
+	];
+	const nodes = [
+		{
+			name: 'UNCONFIGURED - Unconfigured node',
+			value: 'http://mumo.be/data/unknown/node'
+		},
+		{
+			name: 'MOMU-001 - MuMo-v2-030',
+			value: 'https://heron.libis.be/momu/api/items/336462'
+		},
+		{
+			name: 'MOMU-002 - MuMo-v2-031',
+			value: 'https://heron.libis.be/momu/api/items/336465'
+		},
+		{
+			name: 'MOMU-003 - MuMo-v2-032',
+			value: 'https://heron.libis.be/momu/api/items/336468'
+		},
+		{
+			name: 'MOMU-004 - MuMo-v2-033',
+			value: 'https://heron.libis.be/momu/api/items/336471'
+		},
+		{
+			name: 'MOMU-005 - MuMo-v2-034',
+			value: 'https://heron.libis.be/momu/api/items/336474'
+		},
+		{
+			name: 'MOMU-006 - MuMo-v2-035',
+			value: 'https://heron.libis.be/momu/api/items/336477'
+		},
+		{
+			name: 'MOMU-007 - MuMo-v2-036',
+			value: 'https://heron.libis.be/momu/api/items/336480'
+		},
+		{
+			name: 'MOMU-unnamed - mumo-v2-011',
+			value: 'https://heron.libis.be/momu/api/items/336483'
+		}
+	];
+	onMount(() => {
+		if (autoPlay) changed();
+	});
+	export let open = false;
+	export let autoPlay = false;
 </script>
 
 <Card class="relative m-5" size="lg">
 	<div class="flex items-center justify-between">
 		<div>
-			<span class="text-3xl font-bold text-gray-900 dark:text-white">{config.name}</span>
+			<div class="flex items-center">
+				<PlayOutline withEvents on:click={changed} size="xl" class="play cursor-pointer" />
+				{#if open}
+					<span
+						contenteditable="true"
+						bind:textContent={config.name}
+						class="text-3xl font-bold text-gray-900 dark:text-white">{config.name}</span
+					>
+				{:else}
+					<span class="text-3xl font-bold text-gray-900 dark:text-white">{config.name}</span>
+				{/if}
+			</div>
 			<p class="font-light dark:text-white">{count} items</p>
 		</div>
-		<ButtonGroup>
-			<Button on:click={deleteIt}>Delete</Button>
-			<Button on:click={toggle}>Configure!</Button>
-		</ButtonGroup>
+
+		<TrashBinOutline withEvents on:click={deleteIt} size="lg" />
 	</div>
 
-	{#each charts as chart}
-		<div class="my-4">
-			<h3>{chart.type}</h3>
-			<Chart bind:chart={chart.node} data={chart.graphData} />
-		</div>
-	{/each}
-
-	{#if open}
-		<hr />
-		<LdesConfig bind:config on:change={(x) => changed(x.detail)} {locations} />
-	{/if}
+	<div class="charts">
+		{#each charts as chart}
+			<div class="my-4">
+				<h3>{chart.type}</h3>
+				<Chart bind:chart={chart.node} data={chart.graphData} />
+			</div>
+		{/each}
+	</div>
+	<Accordion flush>
+		<AccordionItem bind:open>
+			<span slot="header">Configure graph</span>
+			<LdesConfig bind:config on:change={() => changed()} {locations} {types} {nodes} />
+		</AccordionItem>
+	</Accordion>
 </Card>
 
 <style>
+	:global(.play) {
+		color: green;
+	}
+	.charts {
+		max-height: 440px;
+		overflow-y: auto;
+	}
 </style>

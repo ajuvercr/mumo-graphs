@@ -30,6 +30,7 @@ export const options: DeepPartial<
   }
 > = {
   animation: false,
+  // maintainAspectRatio: true,
   datasets: {
     scatter: {
       fill: true,

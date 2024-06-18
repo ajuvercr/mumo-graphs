@@ -4,18 +4,19 @@
 		url: string;
 
 		location: { value: string; name: string }[];
-		node?: string[];
-		type?: string[];
+		nodes: { value: string; name: string }[];
+		types: { value: string; name: string }[];
 	};
 </script>
 
 <script lang="ts">
 	import MyMultiSelect from './MyMultiSelect.svelte';
-	import { Input, Label, Button, MultiSelect } from 'flowbite-svelte';
-	import type { MultiSelectEvents } from 'flowbite-svelte/MultiSelect.svelte';
+	import { Input, Label, Button } from 'flowbite-svelte';
 	import { createEventDispatcher } from 'svelte';
 
 	export let locations: { name: string; value: string }[];
+	export let nodes: { name: string; value: string }[];
+	export let types: { name: string; value: string }[];
 
 	export let config: Config;
 
@@ -26,31 +27,30 @@
 		console.log('Validating', config);
 		dispatch('change', config);
 	}
-
-	// let thisSelected = config.location;
-	console.log('thisselected', JSON.stringify(config.location.slice(0, 2)));
-	// thisSelected = locations.slice(0, 2);
-	console.log('thisselected', JSON.stringify(locations.slice(0, 2)));
-
-	let selectItems = locations.map((x) => ({ name: x.name, value: x }));
-	$: selectItems = locations.map((x) => ({ name: x.name, value: x }));
-	$: console.log('current', config.location);
 </script>
 
 <div class="mt-6 grid gap-6 md:grid-cols-2">
-	<div>
-		<Label for="name" class="mb-2">Graph Name</Label>
-		<Input type="text" id="name" placeholder="EpicName" bind:value={config.name} />
-	</div>
-	<div>
+	<!-- <div class="my-1"> -->
+  <div>
 		<Label for="url" class="mb-2">LDES Url</Label>
 		<Input type="text" id="url" placeholder="Url" bind:value={config.url} />
 	</div>
 
-	<div class="my-4">
+	<!-- <div class="my-1"> -->
+  <div>
 		<Label for="locations" class="mb-2">Location</Label>
 		<MyMultiSelect id="locations" items={locations} bind:value={config.location} />
 	</div>
+	<!-- <div class="my-1"> -->
+  <div>
+		<Label for="nodes" class="mb-2">Nodes</Label>
+		<MyMultiSelect id="nodes" items={nodes} bind:value={config.nodes} />
+	</div>
+	<!-- <div class="my-1"> -->
+  <div>
+		<Label for="nodes" class="mb-2">Types</Label>
+		<MyMultiSelect id="nodes" items={types} bind:value={config.types} />
+	</div>
 </div>
 
-<Button on:click={validate} class="w-fit">Save!</Button>
+<Button on:click={validate} class="w-fit mt-4">Save!</Button>
