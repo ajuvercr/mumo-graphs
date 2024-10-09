@@ -6,7 +6,7 @@
 	import { onMount } from 'svelte';
 	import type { Config } from '$lib/components/config/LdesConfig.svelte';
 	import { base } from '$app/paths';
-	import { Factory, enhanced_fetch } from 'ldes-client';
+	import { Factory } from 'ldes-client';
 	import MumoInfo from '$lib/components/MumoInfo.svelte';
 
 	export let data: PageData;
@@ -63,19 +63,18 @@
 
 			if (!foundNodeIdx.has(node.instance.id)) {
 				foundNodeIdx.add(node.instance.id);
-				if (foundNodes.length < 5) {
-					foundNodes = [...foundNodes, node.instance];
-					for (const host of node.instance.hosts) {
-						const ob = host.observes;
-						if (observes.indexOf(ob) === -1) {
-							observes = [...observes, ob];
-						}
+				foundNodes = [...foundNodes, node.instance];
+				for (const host of node.instance.hosts) {
+					const ob = host.observes;
+					if (observes.indexOf(ob) === -1) {
+						observes = [...observes, ob];
 					}
 				}
 			}
 			members += 1;
 			mem = await reader.read();
 		}
+
 		console.log('Total', members);
 	});
 

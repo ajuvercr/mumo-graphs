@@ -2,8 +2,8 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
 import polyfillNode from 'rollup-plugin-polyfill-node';
-import nodePolyfills from 'rollup-plugin-node-polyfills';
-// import { nodePolyfills } from 'vite-plugin-node-polyfills';
+// import nodePolyfills from 'rollup-plugin-node-polyfills';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
 import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfill';
@@ -36,5 +36,7 @@ export default defineConfig({
 			plugins: [rollupNodePolyFill()]
 		}
 	},
-	plugins: [sveltekit()]
+	plugins: [
+		sveltekit()
+	]
 });

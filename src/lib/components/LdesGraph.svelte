@@ -1,9 +1,10 @@
 <script lang="ts">
+	import dayjs from 'dayjs';
 	import Chart from './Chart.svelte';
 	import type { ScatterData } from '$lib/components/data';
 	import { MeasurementLens, type Sensor } from '$lib/configs/index';
 	import { ConditionFactory } from '$lib/conditions';
-	import { type Condition, type Member, type Ordered } from 'ldes-client';
+	import { Factory, type Condition, type Member, type Ordered } from 'ldes-client';
 	import {
 		Chart as ChartJS,
 		type Point,
@@ -156,7 +157,6 @@
 				count += 1;
 
 				if (count % 100 === 0) {
-					console.log('updating chart');
 					updateChart();
 					await new Promise((res) => setTimeout(res, 10));
 				}
@@ -180,12 +180,27 @@
 	}
 
 	let timeout: NodeJS.Timeout;
+	let format = 'YYYY-MM-DD';
 
-	async function changed() {
+	$: changed(beforeDate, afterDate);
+
+	let beforeDate: Date | undefined;
+	let internalBefore = dayjs(new Date()).format(format);;
+	$: beforeDate = dayjs(internalBefore, format).toDate();
+
+	let afterDate = new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 90);
+	let internalAfter = dayjs(afterDate).format(format);
+	$: afterDate = dayjs(internalAfter, format).toDate();
+
+	async function changed(before: Date | undefined, after: Date | undefined) {
 		dispatch('change', config);
 
 		if (stream) stream.cancel();
 		if (timeout) clearTimeout(timeout);
+
+		// last 90 days
+		console.log('changed!');
+		console.log(afterDate.toISOString());
 
 		count = 0;
 		charts = [];
@@ -194,6 +209,8 @@
 		const client = factory.build(
 			{
 				condition,
+				after,
+				before
 				// shape: {
 				// 	quads: shape_quads,
 				// 	shapeId: new NamedNode('http://example.org/Measurement')
@@ -208,9 +225,10 @@
 		stream = client.stream().getReader();
 		readStream();
 	}
+	const doChange = () => changed(beforeDate, afterDate);
 
 	onMount(() => {
-		if (autoPlay) changed();
+		if (autoPlay) changed(beforeDate, afterDate);
 	});
 	export let autoPlay = false;
 </script>
@@ -222,7 +240,7 @@
 				{#if streaming}
 					<ArrowUpDownOutline size="xl" class="running" />
 				{:else}
-					<PlayOutline withEvents on:click={changed} size="xl" class="play cursor-pointer" />
+					<PlayOutline withEvents on:click={doChange} size="xl" class="play cursor-pointer" />
 				{/if}
 				<span class="text-3xl font-bold text-gray-900 dark:text-white">{config.name}</span>
 			</div>
@@ -247,12 +265,30 @@
 			{/if}
 		{/each}
 	</div>
+	<div class="footer">
+		Start:
+		<input type="date" bind:value={internalAfter} />
+		End:
+		<input type="date" bind:value={internalBefore} />
+	</div>
+
 </Card>
 
 <style>
+	:root {
+		--date-input-width: 200px;
+	}
 	.header {
 		display: flex;
 		justify-content: space-between;
+	}
+	.footer {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+	:global(.date-time-picker) {
+		width: 16rem;
 	}
 	.element {
 		flex-grow: 1;

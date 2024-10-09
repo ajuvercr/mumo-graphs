@@ -61,6 +61,8 @@
 		"chartjs-plugin-zoom": "^2.0.1",
 		"clsx": "^2.1.1",
 		"date-fns": "^4.1.0",
+		"date-picker-svelte": "^2.13.0",
+		"dayjs": "^1.11.13",
 		"extract-cbd-shape": "^0.1.8",
 		"flowbite": "^2.5.1",
 		"flowbite-svelte": "^0.46.17",

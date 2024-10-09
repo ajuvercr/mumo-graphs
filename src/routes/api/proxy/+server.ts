@@ -62,12 +62,6 @@ export const GET: RequestHandler = async ({ cookies, request }) => {
 	}
 
 	const newUrl = proxy;
-	console.log(
-		'is logged in',
-		session?.info.isLoggedIn,
-		session?.info.webId,
-		newUrl.replace('https://mumo.ilabt.imec.be/', '')
-	);
 
 	try {
 		const response = await fetch_f(newUrl, {
