@@ -100,13 +100,6 @@
 				{/each}
 			</tbody>
 		</table>
-
-		{#each foundNodes as node}
-			<p>
-				{node.id}
-				{node.title}
-			</p>
-		{/each}
 	</div>
 	<div id="portals">
 		<!-- modals will be appended here -->
