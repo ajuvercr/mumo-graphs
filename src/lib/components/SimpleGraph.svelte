@@ -3,7 +3,7 @@
 	import type { ScatterData } from '$lib/components/data';
 	import { MeasurementLens, type Sensor } from '$lib/configs/index';
 	import { ConditionFactory } from '$lib/conditions';
-	import { type Condition, type Member, type Ordered } from 'ldes-client';
+	import { Factory, type Condition, type Member, type Ordered } from 'ldes-client';
 	import {
 		Chart as ChartJS,
 		type Point,
@@ -15,10 +15,9 @@
 	import { Location, Node, SensorPath } from '$lib/paths';
 	import { fetch_f, addToast, type Measurement } from '$lib/utils';
 	import { createEventDispatcher, onMount } from 'svelte';
-	import { PlayOutline, ArrowUpDownOutline } from 'flowbite-svelte-icons';
+	import { PlayOutline } from 'flowbite-svelte-icons';
 	import { DataFactory } from 'n3';
-
-	const { namedNode } = DataFactory;
+	const { literal } = DataFactory;
 
 	const dispatch = createEventDispatcher<{ change: Config; delete: Config }>();
 
@@ -43,8 +42,6 @@
 			unknown
 		>;
 	}[] = [];
-
-	let types: string[] = [];
 
 	const colors = [
 		'#ea5545',
@@ -71,25 +68,26 @@
 
 	function getCondition(): Condition {
 		const factory = ConditionFactory.And();
+		console.log('Config', config);
 
 		if (config.location.length > 0) {
 			const smallF = factory.or();
 			for (const location of config.location) {
-				smallF.leaf(Location, namedNode(location.value));
+				smallF.leaf(Location, literal(location.value));
 			}
 		}
 
 		if (config.nodes.length > 0) {
 			const smallF = factory.or();
 			for (const node of config.nodes) {
-				smallF.leaf(Node, namedNode(node.value));
+				smallF.leaf(Node, literal(node.value));
 			}
 		}
 
 		if (config.types.length > 0) {
 			const smallF = factory.or();
 			for (const ty of config.types) {
-				smallF.leaf(SensorPath, namedNode(ty.value));
+				smallF.leaf(SensorPath, literal(ty.value));
 			}
 		}
 
@@ -100,7 +98,6 @@
 		const sensorName = sensors[measurement.sensor.value].title;
 		let chart = charts.find((x) => x.type === measurement.result.valueType);
 		if (!chart) {
-			types = [...types, measurement.result.valueType];
 			chart = {
 				type: measurement.result.valueType,
 				graphData: {
@@ -135,7 +132,6 @@
 
 	let stream: ReadableStreamDefaultReader<Member>;
 	let count = 0;
-	$: selected = types[0];
 
 	function updateChart() {
 		charts.forEach((chart) => {
@@ -146,9 +142,7 @@
 		});
 	}
 
-	let streaming = false;
 	async function readStream() {
-		streaming = true;
 		let el = await stream.read();
 		console.log('first member!');
 		while (el) {
@@ -176,7 +170,6 @@
 		addToast('Ingestion is done!');
 
 		updateChart();
-		streaming = false;
 	}
 
 	let timeout: NodeJS.Timeout;
@@ -189,8 +182,8 @@
 
 		count = 0;
 		charts = [];
-		types = [];
 		const condition = getCondition();
+		console.log('condition', condition.toString());
 		const client = factory.build(
 			{
 				condition,
@@ -198,11 +191,13 @@
 				// 	quads: shape_quads,
 				// 	shapeId: new NamedNode('http://example.org/Measurement')
 				// },
+				fetch: fetch_f
 			},
 			order
 		);
 		// Maybe this is not working
 		charts.forEach((chart) => (chart.graphData.datasets = []));
+		console.log('Created client');
 
 		// timeout = setInterval(updateChart, 1000);
 		stream = client.stream().getReader();
@@ -212,6 +207,7 @@
 	onMount(() => {
 		if (autoPlay) changed();
 	});
+	export let open = false;
 	export let autoPlay = false;
 </script>
 
@@ -219,78 +215,34 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<div class="flex items-center">
-				{#if streaming}
-					<ArrowUpDownOutline size="xl" class="running" />
+				<PlayOutline withEvents on:click={changed} size="xl" class="play cursor-pointer" />
+				{#if open}
+					<span
+						contenteditable="true"
+						bind:textContent={config.name}
+						class="text-3xl font-bold text-gray-900 dark:text-white">{config.name}</span
+					>
 				{:else}
-					<PlayOutline withEvents on:click={changed} size="xl" class="play cursor-pointer" />
+					<span class="text-3xl font-bold text-gray-900 dark:text-white">{config.name}</span>
 				{/if}
-				<span class="text-3xl font-bold text-gray-900 dark:text-white">{config.name}</span>
 			</div>
 			<p class="font-light dark:text-white">{count} items</p>
 		</div>
 	</div>
 
 	<div class="charts">
-		<div class="header">
-			{#each types as ty}
-				<div class="element" class:selected={selected == ty} on:click={() => (selected = ty)}>
-					{ty.substring(ty.lastIndexOf('#'))}
-				</div>
-			{/each}
-		</div>
 		{#each charts as chart}
-			{#if chart.type === selected}
-				<div class="my-4">
-					<h3>{chart.type}</h3>
-					<Chart bind:chart={chart.node} data={chart.graphData} />
-				</div>
-			{/if}
+			<div class="my-4">
+				<h3>{chart.type}</h3>
+				<Chart bind:chart={chart.node} data={chart.graphData} />
+			</div>
 		{/each}
 	</div>
 </Card>
 
 <style>
-	.header {
-		display: flex;
-		justify-content: space-between;
-	}
-	.element {
-		flex-grow: 1;
-		padding: 5px 0;
-		cursor: pointer;
-		text-align: center;
-		position: relative;
-	}
-	.element:hover {
-		text-shadow: 0px 0px 1px black;
-	}
-
-	.element + .element:before {
-		content: '';
-		position: absolute;
-		left: 0;
-		top: 25%;
-		height: 50%;
-		width: 1px;
-		background: grey;
-	}
-
-	.selected {
-		color: orange;
-	}
-	.selected:hover {
-		text-shadow: 0px 0px 1px orange;
-	}
 	:global(.play) {
 		color: green;
-	}
-
-	:global(.running) {
-		color: orange;
-	}
-
-	:global(.waiting) {
-		color: grey;
 	}
 	.charts {
 		max-height: 440px;

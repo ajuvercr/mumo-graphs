@@ -19,6 +19,12 @@ ex:sensor ex:path (
   <http://qudt.org/1.1/schema/qudt#unit>
 ).
 
+ex:type ex:path (
+  <http://def.isotc211.org/iso19156/2011/Observation#OM_Observation.result>
+  <http://qudt.org/1.1/schema/qudt#unit>
+).
+
+ex:timestamp ex:path <http://def.isotc211.org/iso19156/2011/Observation#OM_Observation.resultTime>.
 #
 #
 [ ] a sh:NodeShape;
