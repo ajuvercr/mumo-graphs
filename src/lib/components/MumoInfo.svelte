@@ -17,7 +17,7 @@
 	export let sensors: { [id: string]: Sensor };
 	export let factory: Factory;
 
-	const values: { [id: string]: number } = {};
+	const values: { [id: string]: { value: number; time: string } } = {};
 	const { namedNode } = DataFactory;
 
 	let state: 'waiting' | 'running' | 'done' = 'waiting';
@@ -49,7 +49,10 @@
 			let chunk = await stream.read();
 			while (chunk && !chunk.done) {
 				const output = <Measurement>MeasurementLens.execute(chunk.value);
-				values[output.result.valueType] = output.result.numericValue;
+				values[output.result.valueType] = {
+					value: output.result.numericValue,
+					time: output.date.toLocaleString()
+				};
 
 				chunk = await stream.read();
 			}
@@ -60,8 +63,11 @@
 
 	let id = '';
 	$: {
-		const segs = node.id.split('/');
-		id = segs[segs.length - 1];
+		const segs = node.location?.split('/');
+		if (segs) {
+			id = segs[segs.length - 1];
+		}
+		console.log('node', node);
 	}
 </script>
 
@@ -71,7 +77,14 @@
 
 	{#each observes as key}
 		<td>
-			{#if values[key]}{values[key].toFixed(2)}{/if}
+			{#if values[key]}
+				<div class="tooltip">
+					{values[key].value.toFixed(2)}
+					<span class="tooltiptext">
+						{values[key].time}
+					</span>
+				</div>
+			{/if}
 		</td>
 	{/each}
 	<td>
@@ -138,5 +151,51 @@
 		width: 100%;
 		display: flex;
 		justify-content: space-around;
+	}
+	/* Tooltip container */
+	.tooltip {
+		position: relative;
+		display: inline-block;
+		border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+	}
+
+	/* Tooltip text */
+	.tooltip .tooltiptext {
+		visibility: hidden;
+		width: 120px;
+		background-color: #555;
+		color: #fff;
+		text-align: center;
+		padding: 5px 0;
+		border-radius: 6px;
+
+		/* Position the tooltip text */
+		position: absolute;
+		z-index: 1;
+		bottom: 125%;
+		left: 50%;
+		margin-left: -60px;
+
+		/* Fade in tooltip */
+		opacity: 0;
+		transition: opacity 0.3s;
+	}
+
+	/* Tooltip arrow */
+	.tooltip .tooltiptext::after {
+		content: '';
+		position: absolute;
+		top: 100%;
+		left: 50%;
+		margin-left: -5px;
+		border-width: 5px;
+		border-style: solid;
+		border-color: #555 transparent transparent transparent;
+	}
+
+	/* Show the tooltip text when you mouse over the tooltip container */
+	.tooltip:hover .tooltiptext {
+		visibility: visible;
+		opacity: 1;
 	}
 </style>

@@ -8,6 +8,7 @@
 	import { base } from '$app/paths';
 	import { Factory } from 'ldes-client';
 	import MumoInfo from '$lib/components/MumoInfo.svelte';
+	import { Writer } from 'n3';
 
 	export let data: PageData;
 	onMount(() => {
@@ -52,6 +53,9 @@
 			console.log(mem);
 
 			const node = NodeInstanceLens.execute(mem.value);
+			if (node.instance.title === 'mumo-v2-007') {
+				console.log(new Writer().quadsToString(mem.value.quads));
+			}
 			console.log(node);
 			if (node.instance.title == 'test') {
 				mem = await reader.read();
@@ -87,7 +91,7 @@
 			<thead>
 				<tr>
 					<th scope="col">Name</th>
-					<th scope="col">Id</th>
+					<th scope="col">Location</th>
 					{#each observes as observe}
 						<th scope="col">{observe.substring(observe.lastIndexOf('#'))}</th>
 					{/each}

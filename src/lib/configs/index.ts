@@ -28,6 +28,7 @@ export type Node = {
 	omeka: string;
 	hosts: Sensor[];
 	parts: Device[];
+  location?: string;
 };
 export type Sensor = {
 	id: string;

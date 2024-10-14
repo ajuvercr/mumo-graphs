@@ -63,6 +63,13 @@
     sh:path dcterms:hasPart;
     sh:name "parts";
     sh:class <Device>;
+  ], [
+    sh:path <http://www.cidoc-crm.org/cidoc-crm/P55_has_current_location>;
+    # sh:minCount 1;
+    sh:maxCount 1;
+    sh:name "location";
+    sh:datatype xsd:string;
+
   ].
 
 [ ] a sh:NodeShape;
