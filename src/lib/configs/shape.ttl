@@ -1,3 +1,4 @@
+@prefix dcterm: <http://purl.org/dc/terms/>.
 @prefix dcterms: <http://purl.org/dc/terms/>.
 @prefix sosa: <http://www.w3.org/ns/sosa/>.
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
@@ -7,6 +8,7 @@
 @prefix foaf: <http://xmlns.com/foaf/0.1/>.
 @prefix ex: <http://example.org/>.
 @prefix cidoc: <http://www.cidoc-crm.org/cidoc-crm/>.
+
 [ ] a sh:NodeShape;
   sh:targetClass <NodeInstance>;
   sh:property [
@@ -38,7 +40,7 @@
     sh:name "title";
     sh:datatype xsd:string;
   ], [
-    sh:path ();
+    sh:path ( );
     # sh:minCount 1;
     sh:maxCount 1;
     sh:name "id";
@@ -68,8 +70,26 @@
     # sh:minCount 1;
     sh:maxCount 1;
     sh:name "location";
-    sh:datatype xsd:string;
+    sh:class <Location>;
+  ].
 
+[ ] a sh:NodeShape;
+  sh:targetClass <Location>;
+  sh:property [
+    sh:name "partOf";
+    sh:maxCount 1;
+    sh:path dcterm:isPartOf;
+    sh:class <Location>;
+  ], [
+    sh:name "title";
+    sh:maxCount 1;
+    sh:path dcterm:title;
+    sh:datatype xsd:string;
+  ], [
+    sh:name "id";
+    sh:maxCount 1;
+    sh:path ( );
+    sh:datatype xsd:iri;
   ].
 
 [ ] a sh:NodeShape;
@@ -87,7 +107,7 @@
     sh:name "title";
     sh:datatype xsd:string;
   ], [
-    sh:path ();
+    sh:path ( );
     # sh:minCount 1;
     sh:maxCount 1;
     sh:name "id";
@@ -121,7 +141,7 @@
     sh:name "publisher";
     sh:datatype xsd:string;
   ], [
-    sh:path ();
+    sh:path ( );
     # sh:minCount 1;
     sh:maxCount 1;
     sh:name "id";
@@ -152,6 +172,7 @@ _:Shape a sh:NodeShape;
     sh:minCount 1;
     sh:node _:Location;
   ].
+
 # <http://mumo.be/data/1705548760021/mumo-v2-008-base-temperature> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://def.isotc211.org/iso19156/2011/Observation#OM_Observation> .
 # <http://mumo.be/data/1705548760021/mumo-v2-008-base-temperature> <http://def.isotc211.org/iso19156/2011/Observation#OM_Observation.resultTime> "2024-01-18T03:32:40.021Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
 # <http://mumo.be/data/1705548760021/mumo-v2-008-base-temperature> <http://def.isotc211.org/iso19156/2011/Observation#OM_Observation.result> _:b151_b13196_b14005_b14003_b14001_b14000_n3-2148 .
@@ -159,7 +180,6 @@ _:Shape a sh:NodeShape;
 # _:b151_b13196_b14005_b14003_b14001_b14000_n3-2148 <http://qudt.org/1.1/schema/qudt#unit> <http://qudt.org/1.1/vocab/unit#DegreeCelsius> .
 # <http://mumo.be/data/1705548760021/mumo-v2-008-base-temperature> <http://www.w3.org/ns/sosa/madeBySensor> <https://heron.libis.be/momu-test/api/items/39022> .
 # <https://heron.libis.be/momu-test/api/items/39013> <http://www.w3.org/ns/sosa/hosts> <https://heron.libis.be/momu-test/api/items/39022> .
-
 [ ] a sh:NodeShape;
   sh:targetClass ex:Value;
   sh:property [
@@ -172,6 +192,11 @@ _:Shape a sh:NodeShape;
     sh:name "valueType";
     sh:path <http://qudt.org/1.1/schema/qudt#unit>;
     sh:datatype xsd:string;
+  ], [
+    sh:maxCount 1;
+    sh:path ( <http://qudt.org/1.1/schema/qudt#unit> rdfs:label );
+    sh:datatype xsd:string;
+    sh:name "valueName";
   ].
 
 [ ] a sh:NodeShape;
@@ -191,11 +216,6 @@ _:Shape a sh:NodeShape;
 ex:Measurement a sh:NodeShape;
   sh:targetClass ex:Measurement;
   sh:property [
-    sh:path sosa:madeBySensor;
-    sh:node [ sh:property [
-      sh:path [ sh:inversePath sosa:hosts ];
-    ] ];
-  ], [
     sh:class ex:Value;
     sh:maxCount 1;
     sh:path <http://def.isotc211.org/iso19156/2011/Observation#OM_Observation.result>;
@@ -211,9 +231,14 @@ ex:Measurement a sh:NodeShape;
     sh:maxCount 1;
     sh:datatype xsd:iri;
   ], [
-    sh:path ( sosa:madeBySensor [ sh:inversePath sosa:hosts ] );
+    sh:path ( sosa:madeBySensor sosa:isHostedBy );
     sh:name "node";
     sh:maxCount 1;
     sh:datatype xsd:iri;
+  ], [
+    sh:path ( sosa:madeBySensor sosa:isHostedBy rdfs:label );
+    sh:name "nodeName";
+    sh:maxCount 1;
+    sh:datatype xsd:string;
   ].
 

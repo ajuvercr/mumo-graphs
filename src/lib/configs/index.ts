@@ -1,5 +1,6 @@
 import shape from '$lib/configs/shape.ttl?raw';
 import type { Measurement } from '$lib/utils';
+import type { Term } from '@rdfjs/types';
 import { Parser } from 'n3';
 import { BasicLens, type Cont, extractShapes } from 'rdf-lens';
 
@@ -28,7 +29,12 @@ export type Node = {
 	omeka: string;
 	hosts: Sensor[];
 	parts: Device[];
-  location?: string;
+	location?: Location;
+};
+export type Location = {
+	partOf?: Location;
+	title: string;
+	id: Term;
 };
 export type Sensor = {
 	id: string;

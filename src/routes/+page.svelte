@@ -3,6 +3,7 @@
 	import { NodeInstanceLens, type Node as N, type Sensor } from '$lib/configs/index';
 	import { fetch_f, toasts } from '$lib/utils';
 	import { Location, SensorPath } from '$lib/paths.ts';
+	import { dataFactory } from '$lib/ldes.ts';
 	import { onMount } from 'svelte';
 	import type { Config } from '$lib/components/config/LdesConfig.svelte';
 	import { base } from '$app/paths';
@@ -23,10 +24,6 @@
 	let foundNodeIdx = new Set<string>();
 
 	let observes: string[] = [];
-	let data_factory: Factory = new Factory({
-		url: 'https://mumo.ilabt.imec.be/ldes/default',
-		fetch: fetch_f()
-	});
 	const sensors: { [label: string]: Sensor } = {};
 
 	onMount(async () => {
@@ -43,7 +40,7 @@
 			url: 'https://mumo.ilabt.imec.be/nodes/default',
 			fetch: fetch_f()
 		});
-		await data_factory.init();
+		await dataFactory.init();
 
 		const reader = client.stream({}, 'none').getReader();
 		let mem = await reader.read();
@@ -100,7 +97,7 @@
 			</thead>
 			<tbody>
 				{#each foundNodes as node}
-					<MumoInfo factory={data_factory} {node} {sensors} {observes} />
+					<MumoInfo factory={dataFactory} {node} {sensors} {observes} />
 				{/each}
 			</tbody>
 		</table>

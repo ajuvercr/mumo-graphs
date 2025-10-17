@@ -1,10 +1,8 @@
 <script lang="ts">
-	import dayjs from 'dayjs';
 	import Chart from './Chart.svelte';
 	import type { ScatterData } from '$lib/components/data';
 	import { MeasurementLens, type Sensor } from '$lib/configs/index';
-	import { ConditionFactory } from '$lib/conditions';
-	import { Factory, type Condition, type Member, type Ordered } from 'ldes-client';
+	import { Client, intoConfig, type Condition, type Member, type Ordered } from 'ldes-client';
 	import {
 		Chart as ChartJS,
 		type Point,
@@ -13,19 +11,14 @@
 	} from 'chart.js';
 	import { Card } from 'flowbite-svelte';
 	import { type Config } from './config/LdesConfig.svelte';
-	import { Location, Node, SensorPath } from '$lib/paths';
-	import { fetch_f, addToast, type Measurement } from '$lib/utils';
+	import { addToast, proxy_fetch, type Measurement } from '$lib/utils';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { PlayOutline, ArrowUpDownOutline } from 'flowbite-svelte-icons';
-	import { DataFactory } from 'n3';
-
-	const { namedNode } = DataFactory;
+	import { Writer } from 'n3';
 
 	const dispatch = createEventDispatcher<{ change: Config; delete: Config }>();
 
-	export let sensors: { [id: string]: Sensor };
 	export let order: Ordered = 'ascending';
-	export let factory: Factory;
 
 	export let config: Config = {
 		name: '',
@@ -70,40 +63,14 @@
 		return colors[idx % colors.length];
 	}
 
-	function getCondition(): Condition {
-		const factory = ConditionFactory.And();
-
-		if (config.location.length > 0) {
-			const smallF = factory.or();
-			for (const location of config.location) {
-				smallF.leaf(Location, namedNode(location.value));
-			}
-		}
-
-		if (config.nodes.length > 0) {
-			const smallF = factory.or();
-			for (const node of config.nodes) {
-				smallF.leaf(Node, namedNode(node.value));
-			}
-		}
-
-		if (config.types.length > 0) {
-			const smallF = factory.or();
-			for (const ty of config.types) {
-				smallF.leaf(SensorPath, namedNode(ty.value));
-			}
-		}
-
-		return factory.intoCondition();
-	}
-
 	function addMeasurement(measurement: Measurement) {
-		const sensorName = sensors[measurement.sensor.value].title;
-		let chart = charts.find((x) => x.type === measurement.result.valueType);
+		const sensorName = measurement.nodeName;
+		let chart = charts.find((x) => x.type === measurement.result.valueName);
 		if (!chart) {
+			console.log('Creating new chart for ', measurement.result.valueType);
 			types = [...types, measurement.result.valueType];
 			chart = {
-				type: measurement.result.valueType,
+				type: measurement.result.valueName,
 				graphData: {
 					datasets: []
 				},
@@ -136,13 +103,9 @@
 
 	let stream: ReadableStreamDefaultReader<Member>;
 	let count = 0;
-	$: selected = types[0];
 
 	function updateChart() {
 		charts.forEach((chart) => {
-			// chart.graphData.datasets.forEach((x) => {
-			// 	(<Point[]>x.data).sort((a, b) => a.x - b.x);
-			// });
 			if (chart.node) chart.node.update();
 		});
 	}
@@ -169,7 +132,7 @@
 				break;
 			}
 
-			// await new Promise((res) => setTimeout(res, 20));
+			await new Promise((res) => setTimeout(res, 20));
 			el = await stream.read();
 		}
 
@@ -179,43 +142,30 @@
 		streaming = false;
 	}
 
-	let timeout: NodeJS.Timeout;
-	let format = 'YYYY-MM-DD';
+	let timeout: NodeJS.Timeout | undefined = undefined;
 
-	$: changed(beforeDate, afterDate);
-
-	let beforeDate: Date | undefined;
-	let internalBefore = dayjs(new Date()).format(format);;
-	$: beforeDate = dayjs(internalBefore, format).toDate();
-
-	let afterDate = new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 90);
-	let internalAfter = dayjs(afterDate).format(format);
-	$: afterDate = dayjs(internalAfter, format).toDate();
-
-	async function changed(before: Date | undefined, after: Date | undefined) {
+	async function changed(condition: Condition, start = false) {
 		dispatch('change', config);
+
+		const doStart = start || streaming;
+		if (!doStart) return;
 
 		if (stream) stream.cancel();
 		if (timeout) clearTimeout(timeout);
 
-		// last 90 days
 		console.log('changed!');
-		console.log(afterDate.toISOString());
 
 		count = 0;
 		charts = [];
 		types = [];
-		const condition = getCondition();
-		const client = factory.build(
-			{
-				condition,
-				after,
-				before
-				// shape: {
-				// 	quads: shape_quads,
-				// 	shapeId: new NamedNode('http://example.org/Measurement')
-				// },
-			},
+
+		const client = new Client(
+			intoConfig({
+				url: 'http://localhost:8001/by-sensor/index.trig',
+				urlIsView: true,
+				fetch: proxy_fetch(fetch),
+				condition
+			}),
 			order
 		);
 		// Maybe this is not working
@@ -225,11 +175,18 @@
 		stream = client.stream().getReader();
 		readStream();
 	}
-	const doChange = () => changed(beforeDate, afterDate);
+
+	function start() {
+		changed(condition, true);
+	}
 
 	onMount(() => {
-		if (autoPlay) changed(beforeDate, afterDate);
+		if (autoPlay) changed(condition, true);
 	});
+
+	$: changed(condition);
+
+	export let condition: Condition;
 	export let autoPlay = false;
 </script>
 
@@ -240,7 +197,7 @@
 				{#if streaming}
 					<ArrowUpDownOutline size="xl" class="running" />
 				{:else}
-					<PlayOutline withEvents on:click={doChange} size="xl" class="play cursor-pointer" />
+					<PlayOutline withEvents on:click={start} size="xl" class="play cursor-pointer" />
 				{/if}
 				<span class="text-3xl font-bold text-gray-900 dark:text-white">{config.name}</span>
 			</div>
@@ -249,29 +206,13 @@
 	</div>
 
 	<div class="charts">
-		<div class="header">
-			{#each types as ty}
-				<div class="element" class:selected={selected == ty} on:click={() => (selected = ty)}>
-					{ty.substring(ty.lastIndexOf('#'))}
-				</div>
-			{/each}
-		</div>
 		{#each charts as chart}
-			{#if chart.type === selected}
-				<div class="my-4">
-					<h3>{chart.type}</h3>
-					<Chart bind:chart={chart.node} data={chart.graphData} />
-				</div>
-			{/if}
+			<div class="my-4">
+				<h3>{chart.type}</h3>
+				<Chart bind:chart={chart.node} data={chart.graphData} />
+			</div>
 		{/each}
 	</div>
-	<div class="footer">
-		Start:
-		<input type="date" bind:value={internalAfter} />
-		End:
-		<input type="date" bind:value={internalBefore} />
-	</div>
-
 </Card>
 
 <style>

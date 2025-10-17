@@ -13,7 +13,7 @@ ex:location ex:path (
   [ sh:zeroOrMorePath dcterms:isPartOf ]
 ).
 
-ex:node ex:path ( sosa:madeBySensor [ sh:inversePath sosa:hosts ] ).
+ex:node ex:path ( sosa:madeBySensor sosa:isHostedBy ).
 ex:sensor ex:path (
   <http://def.isotc211.org/iso19156/2011/Observation#OM_Observation.result>
   <http://qudt.org/1.1/schema/qudt#unit>

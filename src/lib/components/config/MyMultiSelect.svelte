@@ -11,6 +11,7 @@
 
 	function change() {
 		value = strSelected.map((x) => JSON.parse(x));
+		console.log('mms change', strSelected, value);
 	}
 </script>
 

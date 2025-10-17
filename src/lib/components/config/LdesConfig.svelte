@@ -31,26 +31,26 @@
 
 <div class="mt-6 grid gap-6 md:grid-cols-2">
 	<!-- <div class="my-1"> -->
-  <div>
+	<div>
 		<Label for="url" class="mb-2">LDES Url</Label>
 		<Input type="text" id="url" placeholder="Url" bind:value={config.url} />
 	</div>
 
 	<!-- <div class="my-1"> -->
-  <div>
+	<div>
 		<Label for="locations" class="mb-2">Location</Label>
 		<MyMultiSelect id="locations" items={locations} bind:value={config.location} />
 	</div>
 	<!-- <div class="my-1"> -->
-  <div>
+	<div>
 		<Label for="nodes" class="mb-2">Nodes</Label>
 		<MyMultiSelect id="nodes" items={nodes} bind:value={config.nodes} />
 	</div>
 	<!-- <div class="my-1"> -->
-  <div>
+	<div>
 		<Label for="nodes" class="mb-2">Types</Label>
 		<MyMultiSelect id="nodes" items={types} bind:value={config.types} />
 	</div>
 </div>
 
-<Button on:click={validate} class="w-fit mt-4">Save!</Button>
+<Button on:click={validate} class="mtop-4 w-fit">Save!</Button>

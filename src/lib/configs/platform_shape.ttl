@@ -1,0 +1,79 @@
+@prefix sosa: <http://www.w3.org/ns/sosa/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+[ ] a sh:NodeShape;
+  sh:targetClass <Platform>;
+  sh:property [
+    sh:path ( );
+    sh:datatype xsd:iri;
+    sh:name "id";
+    sh:maxCount 1;
+  ], [
+    sh:path <http://purl.org/dc/terms/modified>;
+    sh:datatype xsd:date;
+    sh:name "modified";
+    sh:maxCount 1;
+    sh:minCount 1;
+  ], [
+    sh:path rdfs:label;
+    sh:name "label";
+    sh:datatype xsd:string;
+    sh:maxCount 1;
+    sh:minCount 1;
+  ], [
+    sh:path <http://www.cidoc-crm.org/cidoc-crm/P55_has_current_location>;
+    sh:name "location";
+    sh:datatype xsd:string;
+    sh:maxCount 1;
+  ], [
+    sh:path sosa:hosts;
+    sh:name "sensors";
+    sh:class <Sensor>;
+  ].
+
+[ ] a sh:NodeShape;
+  sh:targetClass <Sensor>;
+  sh:property [
+    sh:path ( );
+    sh:datatype xsd:iri;
+    sh:name "id";
+    sh:maxCount 1;
+  ], [
+    sh:minCount 1;
+    sh:path rdfs:label;
+    sh:datatype xsd:string;
+    sh:name "label";
+    sh:maxCount 1;
+  ], [
+    sh:minCount 1;
+    sh:path <http://purl.org/dc/terms/isPartOf>;
+    sh:datatype xsd:iri;
+    sh:name "isPartOf";
+    sh:maxCount 1;
+  ], [
+    sh:minCount 1;
+    sh:path sosa:observes;
+    sh:class <Kind>;
+    sh:name "observes";
+    sh:maxCount 1;
+    sh:minCount 1;
+  ].
+
+[ ] a sh:NodeShape;
+  sh:targetClass <Kind>;
+  sh:property [
+    sh:path ( );
+    sh:datatype xsd:iri;
+    sh:name "id";
+    sh:maxCount 1;
+    sh:minCount 1;
+  ], [
+    sh:path rdfs:label;
+    sh:datatype xsd:string;
+    sh:name "label";
+    sh:maxCount 1;
+    sh:minCount 1;
+  ].
+

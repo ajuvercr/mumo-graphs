@@ -63,7 +63,7 @@
 
 	let id = '';
 	$: {
-		const segs = node.location?.split('/');
+		const segs = node.location?.id.value.split('/');
 		if (segs) {
 			id = segs[segs.length - 1];
 		}
@@ -107,7 +107,6 @@
 				config={{
 					name: node.title,
 					url: 'https://mumo.ilabt.imec.be/ldes/nodes/root',
-					// url: 'http://localhost:3000/ldes/nodes/root',
 					nodes: [{ value: node.id, name: node.title }],
 					types: [],
 					location: []
