@@ -47,6 +47,7 @@
 
 		<BaseConstraint bind:constraintData={config.constraint} {multiOptions} {relationParameters} />
 		<Button on:click={validate} class="mtop-4 w-fit">Save!</Button>
+		<pre>{JSON.stringify(config.constraint, undefined, 2)}</pre>
 	</div>
 </div>
 
@@ -68,5 +69,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 2rem;
+		max-height: 80vh;
+		overflow: auto;
 	}
 </style>

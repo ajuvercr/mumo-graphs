@@ -1,81 +1,31 @@
 <script lang="ts">
-	import { flip } from 'svelte/animate';
-	import { dndzone } from 'svelte-dnd-action';
 	import { consumePlatforms, type Platform } from '$lib/utils';
 	import { onMount } from 'svelte';
 
-	import BaseConstraint from '$lib/components/constraints/Base.svelte';
-	import { constraintToCondition, defaultProperties, defaultRelations } from '$lib/constraints';
+	import { defaultProperties, defaultRelations } from '$lib/constraints';
 	import { Location, NodePath, TypePath } from '$lib/paths';
 	import LdesGraph from '$lib/components/LdesGraph.svelte';
 	import type { Config } from '$lib/components/config/LdesConfig.svelte';
-	import { EmptyCondition, type Condition } from 'ldes-client';
 	import LdesConfig from '$lib/components/config/LdesConfig.svelte';
 
 	const allLocations: { [id: string]: { name: string; value: string } } = {};
 	const allNodes: { [id: string]: { name: string; value: string } } = {};
 	const allSensors: { [id: string]: { name: string; value: string } } = {};
 	const allTypes: { [id: string]: { name: string; value: string } } = {};
-
 	let currentModal: number | undefined = undefined;
-	const flipDurationMs = 300;
 
-	let items: { config: Config; condition: Condition; idx: number }[] = [
-		{
-			config: {
-				url: 'http://localhost:8004/sensors/by-name/index.trig',
-				name: 'Hello world',
-				constraint: {
-					kind: 'and',
-					children: [
-						{
-							kind: 'multi',
-							name: 'nodes',
-							values: [
-								{
-									name: 'sensor-3',
-									value: 'http://mumo.be/data/sensor/70B3D57ED005E7F2'
-								},
-								{
-									name: 'sensor-4',
-									value: 'http://mumo.be/data/sensor/70B3D57ED005BE9F'
-								},
-								{
-									name: 'sensor-5',
-									value: 'http://mumo.be/data/sensor/70B3D57ED005E7DC'
-								}
-							]
-						}
-					]
-				}
-			},
-			condition: new EmptyCondition(),
-			idx: 0
-		},
-		{
-			config: {
-				url: 'http://localhost:8004/sensors/by-name/index.trig',
-				name: 'Hello world',
-				constraint: {
-					kind: 'and',
-					children: [
-						{
-							kind: 'multi',
-							name: 'nodes',
-							values: [
-								{
-									name: 'sensor-3',
-									value: 'http://mumo.be/data/sensor/70B3D57ED005E7F2'
-								}
-							]
-						}
-					]
-				}
-			},
-			condition: new EmptyCondition(),
-			idx: 1
-		}
-	];
+	let items: { config: Config; idx: number }[] = [];
+	let onServer = true;
+	onMount(async () => {
+		onServer = false;
+		const resp = await fetch('/app/api/state');
+		const xs: Config[] = await resp.json();
+		items = xs.map((config, idx) => ({
+			config,
+			idx
+		}));
+		console.log({ xs });
+	});
 
 	let locations: { name: string; value: string }[] = [];
 	let nodes: { name: string; value: string }[] = [];
@@ -108,6 +58,19 @@
 		console.log(nodes);
 	}
 
+	async function save(xs: typeof items) {
+		if (onServer) return;
+		await fetch('/app/api/state', {
+			body: JSON.stringify(xs.map((x) => x.config)),
+			credentials: 'include',
+			method: 'POST'
+		});
+	}
+
+	$: save(items);
+
+	$: idx = items.map((x) => x.idx + 1).reduceRight((a, b) => (a > b ? a : b), 0);
+
 	onMount(() =>
 		consumePlatforms(updateFound, fetch, 'http://localhost:8004/sensors/by-name/index.trig')
 	);
@@ -117,10 +80,6 @@
 		locations: Location,
 		nodes: NodePath
 	};
-
-	for (const c of items) {
-		c.condition = constraintToCondition(c.config.constraint, lookup);
-	}
 </script>
 
 {#if currentModal !== undefined}
@@ -131,7 +90,6 @@
 		on:confirm={(c) => {
 			if (currentModal !== undefined) {
 				items[currentModal].config = { ...c.detail };
-				items[currentModal].condition = constraintToCondition(c.detail.constraint, lookup);
 			}
 			currentModal = undefined;
 		}}
@@ -139,29 +97,53 @@
 	/>
 {/if}
 
-{#each items as config, i}
-	<div class="card">
-		<LdesGraph
-			condition={config.condition}
-			url="http://localhost:8004/data/by-sensor/index.trig"
-			config={config.config}
-		/>
-		<button on:click={() => (currentModal = i)}>Edit</button>
-	</div>
-{/each}
+<div class="centered">
+	{#each items as config, i (config.idx)}
+		<div class="card">
+			<LdesGraph
+				{lookup}
+				url="http://localhost:8004/data/by-sensor/index.trig"
+				config={config.config}
+				on:edit={() => (currentModal = i)}
+				on:delete={() => {
+					items.splice(i, 1);
+					items = [...items];
+				}}
+			/>
+		</div>
+	{/each}
+
+	<button
+		on:click={() =>
+			(items = [
+				...items,
+				{
+					config: {
+						url: 'http://localhost:8004/sensors/by-name/index.trig',
+						name: 'Graph ' + idx,
+						constraint: {
+							kind: 'and',
+							children: []
+						}
+					},
+					idx
+				}
+			])}>New Graph</button
+	>
+</div>
 
 <style>
-	.card {
-		padding: 1rem;
-		border: 1px solid black;
-		border-radius: 2rem;
-
+	.centered {
 		margin: auto;
 		width: 80vw;
 		max-width: 1200px;
 	}
-	.card + .card {
-		margin-top: 40px;
+	.card {
+		padding: 1rem;
+		border: 1px solid black;
+		border-radius: 2rem;
+		width: 100%;
+		margin-bottom: 40px;
 	}
 
 	section {

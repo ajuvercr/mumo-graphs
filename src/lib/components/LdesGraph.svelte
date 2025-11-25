@@ -15,13 +15,10 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { PlayOutline, ArrowUpDownOutline } from 'flowbite-svelte-icons';
 	import RadioType from './parts/RadioType.svelte';
+	import type { Path } from '$lib/paths';
+	import { constraintToCondition, type ListConstraint } from '$lib/constraints';
 
-	const dispatch = createEventDispatcher<{ change: Config; delete: Config }>();
-
-	export let order: Ordered = 'ascending';
-	export let url = 'http://localhost:3000/ldes/default/root';
-
-	export let config: Config;
+	const dispatch = createEventDispatcher<{ change: Config; delete: null; edit: null }>();
 
 	let charts: {
 		type: string;
@@ -146,8 +143,6 @@
 		streaming = false;
 	}
 
-	let timeout: NodeJS.Timeout | undefined = undefined;
-
 	async function changed(condition: Condition, start = false) {
 		dispatch('change', config);
 
@@ -155,7 +150,6 @@
 		if (!doStart) return;
 
 		if (stream) stream.cancel();
-		if (timeout) clearTimeout(timeout);
 
 		console.log('changed!');
 
@@ -174,7 +168,6 @@
 		// Maybe this is not working
 		charts.forEach((chart) => (chart.graphData.datasets = []));
 
-		// timeout = setInterval(updateChart, 1000);
 		stream = client.stream().getReader();
 		readStream();
 	}
@@ -194,15 +187,24 @@
 		layouts = e.detail.items;
 	}
 
-	export let condition: Condition;
-	export let autoPlay = false;
+	export let order: Ordered = 'ascending';
+	export let url = 'http://localhost:3000/ldes/default/root';
 
+	export let config: Config = {
+		constraint: <ListConstraint>{ kind: 'and', children: [] },
+		name: 'placeholder',
+		url: 'http://localhost:8004/sensors/by-name/index.trig'
+	};
+	export let autoPlay = false;
+	export let lookup: { [id: string]: Path } = {};
 	export let layouts: ChartLayout[] = [];
+
+	$: condition = constraintToCondition(config.constraint, lookup);
 </script>
 
 <section>
 	<div class="flex items-center justify-between">
-		<div>
+		<div class="w-full">
 			<div class="flex items-center">
 				{#if streaming}
 					<ArrowUpDownOutline size="xl" class="running" />
@@ -210,6 +212,11 @@
 					<PlayOutline withEvents on:click={start} size="xl" class="play cursor-pointer" />
 				{/if}
 				<span class="text-3xl font-bold text-gray-900 dark:text-white">{config.name}</span>
+
+				<div class="ml-auto flex items-center gap-4">
+					<button on:click={() => dispatch('edit', null)}>Edit</button>
+					<button on:click={() => dispatch('delete', null)}>Delete</button>
+				</div>
 			</div>
 			<p class="font-light dark:text-white">{count} items</p>
 		</div>
