@@ -25,52 +25,54 @@ export type ScatterData = ChartData<'scatter', DefaultDataPoint<'scatter'>, stri
 // };
 
 export const options: DeepPartial<
-  ChartOptions & {
-    plugins: { zoom: ZoomPluginOptions; decimation: DecimationOptions };
-  }
+	ChartOptions & {
+		plugins: { zoom: ZoomPluginOptions; decimation: DecimationOptions };
+	}
 > = {
-  animation: false,
-  // maintainAspectRatio: true,
-  datasets: {
-    scatter: {
-      fill: true,
-      showLine: true
-    }
-  },
-  scales: {
-    x: {
-      type: 'time',
-      time: {
-        displayFormats: {
-          quarter: 'MMM YYYY'
-        }
-      }
-    },
-    y: {
-      beginAtZero: true
-    }
-  },
-  plugins: {
-    decimation: {
-      enabled: true,
-      algorithm: 'lttb'
-      // Other configuration options
-    },
-    zoom: {
-      pan: {
-        enabled: true,
-        modifierKey: 'ctrl',
-        mode: 'x'
-      },
-      zoom: {
-        wheel: {
-          enabled: true
-        },
-        pinch: {
-          enabled: true
-        },
-        mode: 'x'
-      }
-    }
-  }
+	animation: false,
+	// maintainAspectRatio: true,
+	datasets: {
+		scatter: {
+			fill: true,
+			showLine: true
+		}
+	},
+	scales: {
+		x: {
+			type: 'time',
+			time: {
+				displayFormats: {
+					quarter: 'MMM YYYY'
+				}
+			}
+		},
+		y: {
+			beginAtZero: true
+		}
+	},
+	responsive: true,
+	maintainAspectRatio: true,
+	plugins: {
+		decimation: {
+			enabled: true,
+			algorithm: 'lttb'
+			// Other configuration options
+		},
+		zoom: {
+			pan: {
+				enabled: true,
+				modifierKey: 'ctrl',
+				mode: 'x'
+			},
+			zoom: {
+				wheel: {
+					enabled: true
+				},
+				pinch: {
+					enabled: true
+				},
+				mode: 'x'
+			}
+		}
+	}
 };

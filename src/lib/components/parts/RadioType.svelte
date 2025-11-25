@@ -5,6 +5,8 @@
 	export let value: string = 'text';
 	export let name = 'type-' + Math.random().toString(36).slice(2);
 
+	export let small = false;
+
 	const dispatch = createEventDispatcher();
 
 	function handleChange() {
@@ -15,7 +17,7 @@
 <!-- accessible radiogroup -->
 <div class="radios" role="radiogroup" aria-label="Value type">
 	{#each options as option}
-		<label class="option">
+		<label class="option" class:small>
 			<input type="radio" {name} bind:group={value} value={option} on:change={handleChange} />
 			<span>{option}</span>
 		</label>
@@ -63,6 +65,14 @@
 			border-color 0.12s ease,
 			transform 0.08s ease;
 		box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+	}
+
+	.small span {
+		font-size: 0.7rem;
+		padding: 0.15rem 0.3rem;
+		display: flex;
+		justify-content: center; /* horizontal */
+		align-items: center; /* vertical */
 	}
 
 	/* checked state */
