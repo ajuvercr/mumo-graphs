@@ -17,6 +17,7 @@
 	let items: { config: Config; idx: number }[] = [];
 	let onServer = true;
 	onMount(async () => {
+		consumePlatforms(updateFound, fetch, 'http://localhost:8004/sensors/by-name/index.trig');
 		onServer = false;
 		const resp = await fetch('/app/api/state');
 		const xs: Config[] = await resp.json();
@@ -70,10 +71,6 @@
 	$: save(items);
 
 	$: idx = items.map((x) => x.idx + 1).reduceRight((a, b) => (a > b ? a : b), 0);
-
-	onMount(() =>
-		consumePlatforms(updateFound, fetch, 'http://localhost:8004/sensors/by-name/index.trig')
-	);
 
 	const lookup = {
 		types: TypePath,

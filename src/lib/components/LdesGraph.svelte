@@ -13,10 +13,23 @@
 	import { type Config } from './config/LdesConfig.svelte';
 	import { addToast, proxy_fetch, type ChartLayout, type Measurement } from '$lib/utils';
 	import { createEventDispatcher, onMount } from 'svelte';
-	import { PlayOutline, ArrowUpDownOutline } from 'flowbite-svelte-icons';
+	import {
+		PlayOutline,
+		ArrowUpDownOutline,
+		EditOutline,
+		TrashBinOutline,
+		FileExportOutline,
+		TrashBinSolid,
+		FileExportSolid,
+		EditSolid,
+		StopOutline,
+		StopSolid
+	} from 'flowbite-svelte-icons';
 	import RadioType from './parts/RadioType.svelte';
 	import type { Path } from '$lib/paths';
 	import { constraintToCondition, type ListConstraint } from '$lib/constraints';
+	import HoverIcon from './HoverIcon.svelte';
+	import Delete from './Delete.svelte';
 
 	const dispatch = createEventDispatcher<{ change: Config; delete: null; edit: null }>();
 
@@ -43,6 +56,8 @@
 	];
 
 	const colorNames: string[] = [];
+	const nameToIdMap: { [name: string]: string } = {};
+
 	function sensorColor(sensor: string): string {
 		let idx = colorNames.indexOf(sensor);
 		if (idx == -1) {
@@ -57,7 +72,8 @@
 		const sensorName = measurement.nodeName;
 		let chart = charts.find((x) => x.type === measurement.result.valueName);
 		if (!chart) {
-			console.log('Creating new chart for ', measurement.result.valueType);
+			nameToIdMap[measurement.nodeName] = measurement.node.value;
+
 			chart = {
 				type: measurement.result.valueName,
 				graphData: {
@@ -176,6 +192,47 @@
 		changed(condition, true);
 	}
 
+	function exportCSV() {
+		const rows: { [id: string]: string | number }[] = [];
+		for (const chart of charts) {
+			console.log(
+				chart.type,
+				chart.graphData.yLabels,
+				chart.graphData.xLabels,
+				chart.graphData.labels,
+				chart.graphData.datasets[0].label,
+				chart.graphData.datasets[0].data[0]
+			);
+			for (const dataset of chart.graphData.datasets) {
+				for (const d of <Point[]>dataset.data) {
+					const data = <{ x: Date; y: number }>(<unknown>d);
+					rows.push({
+						name: dataset.label!,
+						id: nameToIdMap[dataset.label!],
+						type: chart.type,
+						timestamp: data.x.toISOString(),
+						value: data.y
+					});
+				}
+			}
+		}
+
+		const headers = Object.keys(rows[0]);
+		const csv = [
+			headers.join(','), // header row
+			...rows.map((r) => headers.map((h) => JSON.stringify(r[h] ?? '')).join(','))
+		].join('\n'); // Create a blob and download
+		const blob = new Blob([csv], { type: 'text/csv' });
+		const url = URL.createObjectURL(blob);
+
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = 'export-' + config.name;
+		a.click();
+
+		URL.revokeObjectURL(url);
+	}
+
 	onMount(() => {
 		if (autoPlay) changed(condition, true);
 	});
@@ -214,8 +271,19 @@
 				<span class="text-3xl font-bold text-gray-900 dark:text-white">{config.name}</span>
 
 				<div class="ml-auto flex items-center gap-4">
-					<button on:click={() => dispatch('edit', null)}>Edit</button>
-					<button on:click={() => dispatch('delete', null)}>Delete</button>
+					<button on:click={() => dispatch('edit', null)}>
+						<HoverIcon>
+							<EditOutline size="lg" slot="outline" />
+							<EditSolid size="lg" slot="solid" />
+						</HoverIcon>
+					</button>
+					<button on:click={() => exportCSV()}>
+						<HoverIcon>
+							<FileExportOutline size="lg" slot="outline" />
+							<FileExportSolid size="lg" slot="solid" />
+						</HoverIcon>
+					</button>
+					<Delete on:delete={() => dispatch('delete', null)} />
 				</div>
 			</div>
 			<p class="font-light dark:text-white">{count} items</p>
@@ -241,11 +309,29 @@
 						<h3 class="ml-3 flex-1">{chart.type}</h3>
 
 						<div class="self-end">
-							<RadioType
-								small={true}
-								options={['small', 'medium', 'large']}
-								bind:value={cfg.expanded}
-							/>
+							<div class="flex">
+								<button on:click={() => (cfg.expanded = 'small')}>
+									{#if cfg.expanded == 'small'}
+										<StopSolid size="sm" />
+									{:else}
+										<StopOutline size="sm" />
+									{/if}
+								</button>
+								<button on:click={() => (cfg.expanded = 'medium')}>
+									{#if cfg.expanded == 'medium'}
+										<StopSolid size="md" />
+									{:else}
+										<StopOutline size="md" />
+									{/if}
+								</button>
+								<button on:click={() => (cfg.expanded = 'large')}>
+									{#if cfg.expanded == 'large'}
+										<StopSolid size="xl" />
+									{:else}
+										<StopOutline size="xl" />
+									{/if}
+								</button>
+							</div>
 						</div>
 					</div>
 

@@ -20,7 +20,7 @@ export type Measurement = {
 	};
 	date: Date;
 	sensor: Term;
-	node: Object;
+	node: Term;
 	nodeName: string;
 };
 
