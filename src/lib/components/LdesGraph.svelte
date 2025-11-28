@@ -11,7 +11,13 @@
 		type ChartTypeRegistry
 	} from 'chart.js';
 	import { type Config } from './config/LdesConfig.svelte';
-	import { addToast, proxy_fetch, type ChartLayout, type Measurement } from '$lib/utils';
+	import {
+		addToast,
+		enhanced_fetch,
+		proxy_fetch,
+		type ChartLayout,
+		type Measurement
+	} from '$lib/utils';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import {
 		PlayOutline,
@@ -30,6 +36,7 @@
 	import { constraintToCondition, type ListConstraint } from '$lib/constraints';
 	import HoverIcon from './HoverIcon.svelte';
 	import Delete from './Delete.svelte';
+	import { fetch } from '@inrupt/solid-client-authn-browser';
 
 	const dispatch = createEventDispatcher<{ change: Config; delete: null; edit: null }>();
 
@@ -167,8 +174,6 @@
 
 		if (stream) stream.cancel();
 
-		console.log('changed!');
-
 		count = 0;
 		charts = [];
 
@@ -176,7 +181,7 @@
 			intoConfig({
 				url,
 				urlIsView: true,
-				fetch: proxy_fetch(fetch),
+				fetch: enhanced_fetch(fetch),
 				condition
 			}),
 			order
@@ -195,14 +200,6 @@
 	function exportCSV() {
 		const rows: { [id: string]: string | number }[] = [];
 		for (const chart of charts) {
-			console.log(
-				chart.type,
-				chart.graphData.yLabels,
-				chart.graphData.xLabels,
-				chart.graphData.labels,
-				chart.graphData.datasets[0].label,
-				chart.graphData.datasets[0].data[0]
-			);
 			for (const dataset of chart.graphData.datasets) {
 				for (const d of <Point[]>dataset.data) {
 					const data = <{ x: Date; y: number }>(<unknown>d);
@@ -215,6 +212,10 @@
 					});
 				}
 			}
+		}
+
+		if (rows.length < 1) {
+			return;
 		}
 
 		const headers = Object.keys(rows[0]);
@@ -271,16 +272,23 @@
 				<span class="text-3xl font-bold text-gray-900 dark:text-white">{config.name}</span>
 
 				<div class="ml-auto flex items-center gap-4">
-					<button on:click={() => dispatch('edit', null)}>
+					{#if charts.length > 0}
+						<button on:click={() => exportCSV()}>
+							<HoverIcon>
+								<FileExportOutline size="lg" slot="outline" />
+								<FileExportSolid size="lg" slot="solid" />
+							</HoverIcon>
+						</button>
+					{/if}
+					<button
+						on:click={(e) => {
+							console.log('Got on click', e);
+							dispatch('edit', null);
+						}}
+					>
 						<HoverIcon>
 							<EditOutline size="lg" slot="outline" />
 							<EditSolid size="lg" slot="solid" />
-						</HoverIcon>
-					</button>
-					<button on:click={() => exportCSV()}>
-						<HoverIcon>
-							<FileExportOutline size="lg" slot="outline" />
-							<FileExportSolid size="lg" slot="solid" />
 						</HoverIcon>
 					</button>
 					<Delete on:delete={() => dispatch('delete', null)} />

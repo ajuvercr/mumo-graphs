@@ -72,6 +72,8 @@
 
 	$: idx = items.map((x) => x.idx + 1).reduceRight((a, b) => (a > b ? a : b), 0);
 
+	$: console.log(currentModal);
+
 	const lookup = {
 		types: TypePath,
 		locations: Location,
@@ -85,12 +87,14 @@
 		multiOptions={{ types, locations, nodes }}
 		relationParameters={{ relations: defaultRelations, properties: defaultProperties }}
 		on:confirm={(c) => {
+			console.log('Got confirm', !!c);
 			if (currentModal !== undefined) {
 				items[currentModal].config = { ...c.detail };
 			}
 			currentModal = undefined;
+			console.log({ currentModal });
 		}}
-		on:cancle={() => (currentModal = undefined)}
+		on:cancel={() => (currentModal = undefined)}
 	/>
 {/if}
 
@@ -101,7 +105,10 @@
 				{lookup}
 				url="http://localhost:8004/data/by-sensor/index.trig"
 				config={config.config}
-				on:edit={() => (currentModal = i)}
+				on:edit={() => {
+					currentModal = i;
+					console.log('Settin current modal');
+				}}
 				on:delete={() => {
 					items.splice(i, 1);
 					items = [...items];

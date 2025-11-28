@@ -11,27 +11,46 @@
 <script lang="ts">
 	import BaseConstraint from '$lib/components/constraints/Base.svelte';
 	import { Input, Label, Button } from 'flowbite-svelte';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 
 	export let config: Config;
 
 	export let multiOptions: { [label: string]: MultiParameters };
 	export let relationParameters: RelationParameters;
 
-	const dispatch = createEventDispatcher<{ confirm: Config; cancle: {} }>();
+	const dispatch = createEventDispatcher<{ confirm: Config; cancel: {} }>();
 
 	function validate() {
-		console.log('Validating', config);
 		dispatch('confirm', config);
 	}
 
 	let modal: HTMLDivElement;
 	function clicked(e: Event) {
 		if (e.target == modal) {
-			console.log('Shoulld close');
-			dispatch('cancle', {});
+			dispatch('cancel', {});
 		}
 	}
+	function handleWindowKeyDown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			dispatch('cancel', {});
+		}
+
+		if (event.key === 'Enter') {
+			event.preventDefault();
+			dispatch('confirm', config);
+		}
+	}
+
+	onMount(() => {
+		window.addEventListener('keydown', handleWindowKeyDown);
+	});
+
+	onDestroy(() => {
+		window.removeEventListener('keydown', handleWindowKeyDown);
+	});
+
+	let showDebug = false;
 </script>
 
 <div class="modal" bind:this={modal} on:click={clicked}>
@@ -47,7 +66,15 @@
 
 		<BaseConstraint bind:constraintData={config.constraint} {multiOptions} {relationParameters} />
 		<Button on:click={validate} class="mtop-4 w-fit">Save!</Button>
-		<pre>{JSON.stringify(config.constraint, undefined, 2)}</pre>
+		<Button
+			size="xs"
+			color="alternative"
+			on:click={() => (showDebug = !showDebug)}
+			class="mtop-4 w-fit">Toggle Debug</Button
+		>
+		{#if showDebug}
+			<pre>{JSON.stringify(config.constraint, undefined, 2)}</pre>
+		{/if}
 	</div>
 </div>
 

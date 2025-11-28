@@ -46,7 +46,8 @@
 		return true;
 	}
 
-	function validateDate(out: Date) {
+	function validateDate(out: Date | undefined) {
+		if (out === undefined) return false;
 		tooltipText = undefined;
 		if (isNaN(out.getTime())) {
 			kind = 'error';

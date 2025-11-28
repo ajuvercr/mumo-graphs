@@ -1,10 +1,16 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { handleIncomingRedirect } from '@inrupt/solid-client-authn-browser';
 	import { onMount } from 'svelte';
 
 	onMount(async () => {
+		const session = await handleIncomingRedirect({
+			restorePreviousSession: true
+		});
+		console.log(session);
 		setTimeout(() => {
-			window.location.href = '/';
-		}, 200);
+			goto('/app/testing');
+		}, 1000);
 	});
 </script>
 

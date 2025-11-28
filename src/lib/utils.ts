@@ -106,7 +106,7 @@ export function enhanced_fetch(fetch_f: typeof fetch): typeof fetch {
 	const f: typeof fetch = async (a, b) => {
 		console.log('Fetching', a);
 		const resp = await fetch_f(a, b);
-		if (resp.status == 401) {
+		if (resp.status === 401 || resp.status === 403) {
 			return new Response('', { headers: { 'content-type': 'text/turtle', cache: 'no-cache' } });
 		}
 		return resp;
