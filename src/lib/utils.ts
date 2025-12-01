@@ -1,4 +1,3 @@
-import jsonld from 'jsonld';
 import { Parser, type Term } from 'n3';
 import { writable } from 'svelte/store';
 import { base } from '$app/paths';
@@ -39,14 +38,6 @@ export function addToast(text: string) {
 		x.push(newToas);
 		return x;
 	});
-}
-
-export async function jsonld_to_quads(ld: string) {
-	const nquads = await jsonld.toRDF(JSON.parse(ld), {
-		format: 'application/n-quads'
-	});
-	const quads = new Parser().parse(nquads);
-	return quads;
 }
 
 export function cached(fetch_f: typeof fetch): typeof fetch {

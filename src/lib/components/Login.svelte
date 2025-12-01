@@ -46,7 +46,7 @@
 		if (!getDefaultSession().info.isLoggedIn) {
 			await login({
 				oidcIssuer: 'https://login.inrupt.com',
-				redirectUrl: new URL('/app/redirect2', window.location.href).toString(),
+				redirectUrl: new URL('/app/redirect', window.location.href).toString(),
 				clientName: 'MuMo Graphs'
 			});
 		}

@@ -4,7 +4,6 @@
 	"compilerOptions": {
     "typeRoots": [
       "./node_modules/@types",
-      "./src/types",
       "./.svelte-kit/types/"
     ],
     "paths": {
@@ -13,10 +12,7 @@
 			],
 			"$lib/*": [
 				"./src/lib/*"
-			],
-      "jsonld": [
-        "./src/types/jsonld"
-      ]
+			]
     },
 		"allowJs": true,
 		"checkJs": true,
