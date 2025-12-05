@@ -10,8 +10,10 @@
 
 <script lang="ts">
 	import BaseConstraint from '$lib/components/constraints/Base.svelte';
-	import { Input, Label, Button } from 'flowbite-svelte';
+	import { Input, Label, Button, Select } from 'flowbite-svelte';
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+	import { settings } from '$lib/settings';
+	import { get } from 'svelte/store';
 
 	export let config: Config;
 
@@ -19,6 +21,11 @@
 	export let relationParameters: RelationParameters;
 
 	const dispatch = createEventDispatcher<{ confirm: Config; cancel: {} }>();
+
+	let thisSettings = get(settings);
+	settings.subscribe((s) => {
+		thisSettings = s;
+	});
 
 	function validate() {
 		dispatch('confirm', config);
@@ -61,7 +68,11 @@
 		</div>
 		<div>
 			<Label for="url" class="mb-2">LDES Url</Label>
-			<Input type="text" id="url" placeholder="Url" bind:value={config.url} />
+			<Select bind:value={config.url} placeholder="Add options via settings">
+				{#each $settings.dataOptions as opt}
+					<option value={opt}>{opt}</option>
+				{/each}
+			</Select>
 		</div>
 
 		<BaseConstraint bind:constraintData={config.constraint} {multiOptions} {relationParameters} />

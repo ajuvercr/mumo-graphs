@@ -7,6 +7,8 @@
 	import LdesGraph from '$lib/components/LdesGraph.svelte';
 	import type { Config } from '$lib/components/config/LdesConfig.svelte';
 	import LdesConfig from '$lib/components/config/LdesConfig.svelte';
+	import { settings } from '$lib/settings';
+	import { get } from 'svelte/store';
 
 	const allLocations: { [id: string]: { name: string; value: string } } = {};
 	const allNodes: { [id: string]: { name: string; value: string } } = {};
@@ -14,10 +16,12 @@
 	const allTypes: { [id: string]: { name: string; value: string } } = {};
 	let currentModal: number | undefined = undefined;
 
+	let currentSettings = get(settings);
 	let items: { config: Config; idx: number }[] = [];
 	let onServer = true;
 	onMount(async () => {
-		consumePlatforms(updateFound, fetch, 'http://localhost:8004/sensors/by-name/index.trig');
+		currentSettings = get(settings);
+		consumePlatforms(updateFound, fetch, currentSettings.sensorLdes);
 		onServer = false;
 		const resp = await fetch('/app/api/state');
 		const xs: Config[] = await resp.json();
@@ -103,7 +107,7 @@
 		<div class="card">
 			<LdesGraph
 				{lookup}
-				url="http://localhost:8004/data/by-sensor/index.trig"
+				url={config.config.url}
 				config={config.config}
 				on:edit={() => {
 					currentModal = i;
@@ -123,7 +127,7 @@
 				...items,
 				{
 					config: {
-						url: 'http://localhost:8004/sensors/by-name/index.trig',
+						url: currentSettings.dataLdes,
 						name: 'Graph ' + idx,
 						constraint: {
 							kind: 'and',

@@ -294,7 +294,10 @@
 					<Delete on:delete={() => dispatch('delete', null)} />
 				</div>
 			</div>
-			<p class="font-light dark:text-white">{count} items</p>
+			<p class="font-light dark:text-white">
+				From {config.url}
+				{count} items.
+			</p>
 		</div>
 	</div>
 

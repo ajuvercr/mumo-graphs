@@ -81,7 +81,7 @@ export function proxy_fetch(fetch_f: typeof fetch): typeof fetch {
 	const f: typeof fetch = async (a, b) => {
 		console.log('Fetching', a);
 		const proxy = encodeURIComponent(a.toString());
-		const resp = await fetch_f(base + '/api/proxy?proxy=' + proxy + `&_=${Date.now()}`, b);
+		const resp = await fetch_f(a, b);
 		if (resp.status == 401) {
 			return new Response('', { headers: { 'content-type': 'text/turtle' } });
 		}
@@ -204,3 +204,37 @@ export type ChartLayout = {
 	expanded: string; // full width or normal
 	order: number; // used for sorting & reordering
 };
+
+export function decodeJwt(token: string) {
+	const parts = token.split('.');
+	if (parts.length !== 3) throw new Error('Invalid JWT');
+
+	const payload = parts[1];
+	// Decode Base64URL
+	const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+	return JSON.parse(json);
+}
+
+export function base64Encode(str: string) {
+	// Browser, Deno, Workers: use btoa
+	if (typeof btoa !== 'undefined') {
+		return btoa(str);
+	}
+
+	// Node, Bun: use Buffer
+	if (typeof Buffer !== 'undefined') {
+		return Buffer.from(str, 'utf8').toString('base64');
+	}
+
+	throw new Error('No base64 encoding available in this environment');
+}
+
+export function decodeBase64(base64String: string) {
+	try {
+		// Decode Base64 to a string
+		return atob(base64String);
+	} catch (error) {
+		console.error('Invalid Base64 string', error);
+		return null;
+	}
+}

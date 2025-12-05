@@ -17,6 +17,15 @@ async function getState(): Promise<{ [label: string]: any[] }> {
 	}
 }
 
+async function getWebId(request: Request) {
+	try {
+		const json = await request.json();
+		return json.webId;
+	} catch (ex) {
+		return;
+	}
+}
+
 export const GET: RequestHandler = async ({ cookies, request }) => {
 	console.log('profile get');
 	const session = await getSession(cookies);
