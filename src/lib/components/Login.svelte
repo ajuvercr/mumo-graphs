@@ -3,6 +3,7 @@
 	import { Button, Span } from 'flowbite-svelte';
 	import { derived } from 'svelte/store';
 	import { profile } from '$lib/profile';
+	import { storage } from '$lib/storage';
 
 	const webId = derived(profile, (p) => p.webId);
 
@@ -23,6 +24,7 @@
 	async function logout() {
 		const session = getDefaultSession();
 		await session.logout({ logoutType: 'app' });
+		storage.remove('cc');
 		window.location.reload();
 	}
 </script>
