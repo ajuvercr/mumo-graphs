@@ -2,7 +2,7 @@
 	import { login, getDefaultSession } from '@inrupt/solid-client-authn-browser';
 	import { Button, Span } from 'flowbite-svelte';
 	import { derived } from 'svelte/store';
-	import { profile } from '$lib/profile';
+	import { profile, logoutFetch } from '$lib/profile';
 	import { storage } from '$lib/storage';
 
 	const webId = derived(profile, (p) => p.webId);
@@ -25,6 +25,7 @@
 		const session = getDefaultSession();
 		await session.logout({ logoutType: 'app' });
 		storage.remove('cc');
+		logoutFetch();
 		window.location.reload();
 	}
 </script>

@@ -17,6 +17,9 @@ export default defineConfig({
 			'top-level-await': true //browsers can handle top-level-await features
 		}
 	},
+	define: {
+		global: 'globalThis'
+	},
 	optimizeDeps: {
 		include: ['ldes-client'],
 		esbuildOptions: {
@@ -36,7 +39,5 @@ export default defineConfig({
 			plugins: [rollupNodePolyFill()]
 		}
 	},
-	plugins: [
-		sveltekit()
-	]
+	plugins: [sveltekit()]
 });

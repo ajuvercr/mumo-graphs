@@ -11,32 +11,23 @@
 		type ChartTypeRegistry
 	} from 'chart.js';
 	import { type Config } from './config/LdesConfig.svelte';
-	import {
-		addToast,
-		enhanced_fetch,
-		proxy_fetch,
-		type ChartLayout,
-		type Measurement
-	} from '$lib/utils';
+	import { addToast, enhanced_fetch, type ChartLayout, type Measurement } from '$lib/utils';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import {
 		PlayOutline,
 		ArrowUpDownOutline,
 		EditOutline,
-		TrashBinOutline,
 		FileExportOutline,
-		TrashBinSolid,
 		FileExportSolid,
 		EditSolid,
 		StopOutline,
 		StopSolid
 	} from 'flowbite-svelte-icons';
-	import RadioType from './parts/RadioType.svelte';
 	import type { Path } from '$lib/paths';
 	import { constraintToCondition, type ListConstraint } from '$lib/constraints';
 	import HoverIcon from './HoverIcon.svelte';
 	import Delete from './Delete.svelte';
-	import { fetch } from '@inrupt/solid-client-authn-browser';
+	import { myFetch } from '$lib/profile';
 
 	const dispatch = createEventDispatcher<{ change: Config; delete: null; edit: null }>();
 
@@ -181,7 +172,7 @@
 			intoConfig({
 				url,
 				urlIsView: true,
-				fetch: enhanced_fetch(fetch),
+				fetch: enhanced_fetch(myFetch),
 				condition
 			}),
 			order
@@ -235,6 +226,9 @@
 	}
 
 	onMount(() => {
+		if (typeof setImmediate === 'undefined') {
+			window.setImmediate = (fn, ...args) => setTimeout(fn, 0, ...args);
+		}
 		if (autoPlay) changed(condition, true);
 	});
 

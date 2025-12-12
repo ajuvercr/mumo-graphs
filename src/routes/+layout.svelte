@@ -12,7 +12,7 @@
 		if (cc) {
 			storage.set('cc', cc);
 			const url = new URL(window.location.href);
-			console.log('Setting cc');
+			console.log('Setting cc', cc);
 			url.searchParams.delete('cc');
 			window.history.replaceState({}, '', url);
 		}

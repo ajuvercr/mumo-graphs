@@ -21,6 +21,10 @@ async function findDefaultSession(): Promise<boolean> {
 	return session.info.isLoggedIn;
 }
 
+export async function logoutFetch() {
+	localFetch = window.fetch;
+}
+
 export async function handleOidcFlow(): Promise<boolean> {
 	const url = new URL(window.location.href);
 	const hasAuthParams = url.searchParams.has('code') || url.searchParams.has('error');
@@ -47,16 +51,18 @@ function scheduleRefresh(expiresIn: number) {
 
 export async function getSessionFromCC(): Promise<boolean> {
 	const ccV = <string>storage.get('cc');
+	console.log({ ccV });
 
 	if (ccV) {
-		const [a, b, c] = decodeBase64(ccV)!.split(':');
-		const ccValue = base64Encode(a + ':' + b);
-		const tokenValue = decodeURIComponent(c);
-
+		const decoded: { id: string; secret: string; endpoint: string } = JSON.parse(
+			decodeBase64(ccV)!
+		);
+		const ccValue = base64Encode(`${decoded.id}:${decoded.secret}`);
+		console.log(decoded, `${decoded.id}:${decoded.secret}`);
 		const keypair = await DPoP.generateKeyPair('ES256');
-		const proof = await DPoP.generateProof(keypair, tokenValue, 'POST', undefined, undefined);
+		const proof = await DPoP.generateProof(keypair, decoded.endpoint, 'POST', undefined, undefined);
 
-		const response = await fetch(tokenValue, {
+		const response = await fetch(decoded.endpoint, {
 			method: 'POST',
 			headers: {
 				// The header needs to be in base64 encoding.
@@ -70,6 +76,9 @@ export async function getSessionFromCC(): Promise<boolean> {
 		const text = await response.text();
 		console.log(text);
 		const json = JSON.parse(text);
+
+		if (!json.access_token) return false;
+
 		scheduleRefresh(json.expires_in);
 		console.log(json);
 
@@ -95,4 +104,4 @@ export async function getSessionFromCC(): Promise<boolean> {
 	return false;
 }
 
-let localFetch = fetch;
+let localFetch = window.fetch;
