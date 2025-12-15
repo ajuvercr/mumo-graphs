@@ -89,14 +89,21 @@ export async function getSessionFromCC(): Promise<boolean> {
 
 		const access_token = json.access_token.slice();
 
-		localFetch = (url, options) => {
-			const token = access_token;
+		const makeHeaders = async (url: string) => {
+			const proof = await DPoP.generateProof(keypair, url, 'GET', undefined, undefined);
+			return proof;
+		};
 
-			return fetch(url, {
+		localFetch = async (url, options) => {
+			const token = access_token;
+			const dpop = await makeHeaders(url.toString());
+
+			return await fetch(url, {
 				...options,
 				headers: {
 					...(options?.headers || {}),
-					Authorization: `Bearer ${token}`
+					Authorization: `DPoP ${token}`,
+					DPoP: dpop
 				}
 			});
 		};
