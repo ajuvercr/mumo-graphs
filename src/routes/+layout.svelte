@@ -6,7 +6,7 @@
 	import { storage } from '$lib/storage';
 	import { handleOidcFlow, getSessionFromCC } from '$lib/profile';
 
-	onMount(() => {
+	onMount(async () => {
 		const url = new URL(window.location.href);
 		const cc = url.searchParams.get('cc');
 		if (cc) {
@@ -35,7 +35,7 @@
 	</NavBrand>
 	<div class="flex md:order-2">
 		<Login />
-		<Button href="/app/settings" color="alternative">Settings</Button>
+		<Button href="/settings" color="alternative">Settings</Button>
 		<NavHamburger />
 	</div>
 </Navbar>

@@ -13,9 +13,9 @@
 		// Start the Login Process if not already logged in.
 		if (!getDefaultSession().info.isLoggedIn) {
 			await login({
-				// oidcIssuer: 'https://login.inrupt.com',
-				oidcIssuer: 'http://localhost:8004/oidc/',
-				redirectUrl: new URL('/app/redirect', window.location.href).toString(),
+				oidcIssuer: 'https://login.inrupt.com',
+				// oidcIssuer: 'http://localhost:8004/oidc/',
+				redirectUrl: window.location.href,
 				clientName: 'MuMo Graphs'
 			});
 		}

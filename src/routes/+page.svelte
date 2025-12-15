@@ -23,13 +23,6 @@
 		currentSettings = get(settings);
 		consumePlatforms(updateFound, fetch, currentSettings.sensorLdes);
 		onServer = false;
-		const resp = await fetch('/app/api/state');
-		const xs: Config[] = await resp.json();
-		items = xs.map((config, idx) => ({
-			config,
-			idx
-		}));
-		console.log({ xs });
 	});
 
 	let locations: { name: string; value: string }[] = [];
@@ -65,18 +58,15 @@
 
 	async function save(xs: typeof items) {
 		if (onServer) return;
-		await fetch('/app/api/state', {
-			body: JSON.stringify(xs.map((x) => x.config)),
-			credentials: 'include',
-			method: 'POST'
-		});
+		// await fetch('/app/api/state', {
+		// 	body: JSON.stringify(xs.map((x) => x.config)),
+		// 	credentials: 'include',
+		// 	method: 'POST'
+		// });
 	}
 
 	$: save(items);
-
 	$: idx = items.map((x) => x.idx + 1).reduceRight((a, b) => (a > b ? a : b), 0);
-
-	$: console.log(currentModal);
 
 	const lookup = {
 		types: TypePath,

@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { getDefaultSession, handleIncomingRedirect } from '@inrupt/solid-client-authn-browser';
+import { getDefaultSession } from '@inrupt/solid-client-authn-browser';
 import { storage } from './storage';
 import { base64Encode, decodeBase64, decodeJwt } from './utils';
 
@@ -13,6 +13,7 @@ export const myFetch: typeof fetch = (a, b) => localFetch(a, b);
 
 async function findDefaultSession(): Promise<boolean> {
 	const session = getDefaultSession();
+	console.log({ session });
 	const webId = session.info.webId;
 
 	profile.set({ webId });
@@ -22,20 +23,21 @@ async function findDefaultSession(): Promise<boolean> {
 }
 
 export async function logoutFetch() {
-	localFetch = window.fetch;
+	localFetch = fetch;
 }
 
 export async function handleOidcFlow(): Promise<boolean> {
 	const url = new URL(window.location.href);
 	const hasAuthParams = url.searchParams.has('code') || url.searchParams.has('error');
 
-	try {
-		if (hasAuthParams) {
-			await handleIncomingRedirect({
-				restorePreviousSession: true
-			});
-		}
-	} catch (e) {}
+	await new Promise((res) => setTimeout(res, 500));
+	// try {
+	// 	if (hasAuthParams) {
+	// 		await handleIncomingRedirect({
+	// 			restorePreviousSession: true
+	// 		});
+	// 	}
+	// } catch (e) {}
 
 	return await findDefaultSession();
 }
@@ -111,4 +113,4 @@ export async function getSessionFromCC(): Promise<boolean> {
 	return false;
 }
 
-let localFetch = window.fetch;
+let localFetch = fetch;

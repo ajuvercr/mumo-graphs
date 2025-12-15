@@ -2,8 +2,8 @@
 	import { dragHandleZone, dragHandle } from 'svelte-dnd-action';
 	import Chart from './Chart.svelte';
 	import type { ScatterData } from '$lib/components/data';
-	import { MeasurementLens, type Sensor } from '$lib/configs/index';
-	import { Client, intoConfig, type Condition, type Member, type Ordered } from 'ldes-client';
+	import { MeasurementLens } from '$lib/configs/index';
+	import { replicateLDES, type Member } from 'ldes-client';
 	import {
 		Chart as ChartJS,
 		type Point,
@@ -157,7 +157,7 @@
 		streaming = false;
 	}
 
-	async function changed(condition: Condition, start = false) {
+	async function changed(condition: any, start = false) {
 		dispatch('change', config);
 
 		const doStart = start || streaming;
@@ -168,13 +168,13 @@
 		count = 0;
 		charts = [];
 
-		const client = new Client(
-			intoConfig({
+		const client = replicateLDES(
+			{
 				url,
 				urlIsView: true,
 				fetch: enhanced_fetch(myFetch),
 				condition
-			}),
+			},
 			order
 		);
 		// Maybe this is not working
@@ -226,9 +226,9 @@
 	}
 
 	onMount(() => {
-		if (typeof setImmediate === 'undefined') {
-			window.setImmediate = (fn, ...args) => setTimeout(fn, 0, ...args);
-		}
+		// if (typeof setImmediate === 'undefined') {
+		// 	window.setImmediate = (fn, ...args) => setTimeout(fn, 0, ...args);
+		// }
 		if (autoPlay) changed(condition, true);
 	});
 
@@ -252,6 +252,7 @@
 	export let layouts: ChartLayout[] = [];
 
 	$: condition = constraintToCondition(config.constraint, lookup);
+	$: console.log('Setting up multi constrained equal to', condition);
 </script>
 
 <section>

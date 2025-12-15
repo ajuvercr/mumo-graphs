@@ -1,7 +1,7 @@
 import { Parser, type Term } from 'n3';
 import { writable } from 'svelte/store';
 import { base } from '$app/paths';
-import { Client, intoConfig } from 'ldes-client';
+import { replicateLDES } from 'ldes-client';
 import { BasicLens, extractShapes, type Cont } from 'rdf-lens';
 
 import platform_shape from '$lib/configs/platform_shape.ttl?raw';
@@ -171,16 +171,17 @@ export async function consumePlatforms(
 	f: typeof fetch,
 	url = 'http://localhost:8000/by-name/index.trig'
 ) {
+	console.log({ url });
 	const shapes = extractShapes(new Parser().parse(platform_shape));
 	const platform = <BasicLens<Cont, Platform>>shapes.lenses['Platform'];
 
-	const client = new Client(
-		intoConfig({
+	const client = replicateLDES(
+		{
 			url,
 			fetch: proxy_fetch(f),
 			materialize: true,
 			urlIsView: true
-		}),
+		},
 		'none'
 	);
 

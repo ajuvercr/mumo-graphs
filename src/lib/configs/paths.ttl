@@ -8,9 +8,8 @@
 
 ex:location ex:path (
   sosa:madeBySensor
-  [ sh:inversePath sosa:hosts ]
+  sosa:isHostedBy
   cidoc:P55_has_current_location
-  [ sh:zeroOrMorePath dcterms:isPartOf ]
 ).
 
 ex:node ex:path ( sosa:madeBySensor sosa:isHostedBy ).
@@ -31,7 +30,7 @@ ex:timestamp ex:path <http://def.isotc211.org/iso19156/2011/Observation#OM_Obser
   sh:targetClass _:rdfThing;
   sh:property [
     sh:path ( );
-    sh:datatype xsd:iri;
+    sh:datatype xsd:any;
     sh:maxCount 1;
     sh:minCount 1;
     sh:name "entry";

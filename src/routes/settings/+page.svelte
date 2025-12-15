@@ -1,9 +1,7 @@
 <script lang="ts">
-	import { updated } from '$app/stores';
 	import { settings, DEFAULT_SETTINGS } from '$lib/settings';
-	import { Select, Button, Input } from 'flowbite-svelte';
+	import { Button, Input } from 'flowbite-svelte';
 	import { onMount } from 'svelte';
-	import { get } from 'svelte/store';
 	const data = settings;
 
 	// Local bindings to store values
