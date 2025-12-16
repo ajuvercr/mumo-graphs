@@ -1,3 +1,4 @@
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
 @prefix sosa: <http://www.w3.org/ns/sosa/>.
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
@@ -22,6 +23,16 @@
     sh:datatype xsd:string;
     sh:maxCount 1;
     sh:minCount 1;
+  ], [
+    sh:path skos:prefLabel;
+    sh:name "prefLabel";
+    sh:datatype xsd:string;
+    sh:maxCount 1;
+  ], [
+    sh:path <http://purl.org/dc/terms/identifier>;
+    sh:name "euid";
+    sh:datatype xsd:string;
+    sh:maxCount 1;
   ], [
     sh:path <http://www.cidoc-crm.org/cidoc-crm/P55_has_current_location>;
     sh:name "location";

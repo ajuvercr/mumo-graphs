@@ -108,6 +108,5 @@
 		flex-direction: column;
 		gap: 2rem;
 		max-height: 80vh;
-		overflow: auto;
 	}
 </style>

@@ -239,7 +239,7 @@
 		layouts = e.detail.items;
 	}
 
-	export let order: Ordered = 'ascending';
+	export let order: 'ascending' | 'descending' | 'none' = 'ascending';
 	export let url = 'http://localhost:3000/ldes/default/root';
 
 	export let config: Config = {

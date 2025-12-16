@@ -3,7 +3,7 @@
 	import { options } from './data';
 	import type { ScatterData } from './data';
 	import 'chartjs-adapter-date-fns';
-	// import zoomPlugin from 'chartjs-plugin-zoom';
+	import zoomPlugin from 'chartjs-plugin-zoom';
 
 	import {
 		Chart as ChartJS,
@@ -40,8 +40,8 @@
 		Tooltip,
 		LineController,
 		BarController,
-		ScatterController
-		// zoomPlugin
+		ScatterController,
+		zoomPlugin
 	);
 	// function triggerTooltip(chart: ChartJS) {
 	// 	const tooltip = chart && chart.tooltip;

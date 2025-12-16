@@ -7,21 +7,42 @@
 	import LdesGraph from '$lib/components/LdesGraph.svelte';
 	import type { Config } from '$lib/components/config/LdesConfig.svelte';
 	import LdesConfig from '$lib/components/config/LdesConfig.svelte';
-	import { settings } from '$lib/settings';
+	import { settings, type Settings } from '$lib/settings';
 	import { get } from 'svelte/store';
+	import { profile } from '$lib/profile';
+	import { setLogger } from 'ldes-client';
 
-	const allLocations: { [id: string]: { name: string; value: string } } = {};
-	const allNodes: { [id: string]: { name: string; value: string } } = {};
-	const allSensors: { [id: string]: { name: string; value: string } } = {};
-	const allTypes: { [id: string]: { name: string; value: string } } = {};
+	let allLocations: { [id: string]: { name: string; value: string } } = {};
+	let allNodes: { [id: string]: { name: string; value: string } } = {};
+	let allSensors: { [id: string]: { name: string; value: string } } = {};
+	let allTypes: { [id: string]: { name: string; value: string } } = {};
+
 	let currentModal: number | undefined = undefined;
+	let currentStream: ReadableStreamDefaultReader | undefined = undefined;
+
+	function resetPlatforms(settings: Settings) {
+		if (currentStream !== undefined) {
+			currentStream.cancel();
+			currentStream = undefined;
+		}
+		allLocations = {};
+		allNodes = {};
+		allSensors = {};
+		allTypes = {};
+		currentStream = consumePlatforms(updateFound, fetch, settings.sensorLdes);
+	}
 
 	let currentSettings = get(settings);
+
+	settings.subscribe(resetPlatforms);
+	profile.subscribe(() => resetPlatforms(currentSettings));
+
 	let items: { config: Config; idx: number }[] = [];
 	let onServer = true;
 	onMount(async () => {
+		setLogger({});
 		currentSettings = get(settings);
-		consumePlatforms(updateFound, fetch, currentSettings.sensorLdes);
+		setTimeout(() => resetPlatforms(currentSettings), 100);
 		onServer = false;
 	});
 
@@ -33,9 +54,16 @@
 		if (plat.location && allLocations[plat.location] === undefined) {
 			allLocations[plat.location] = { name: plat.location, value: plat.location };
 		}
+
+		console.log(plat);
 		if (allNodes[plat.id.value] === undefined) {
-			allNodes[plat.id.value] = { name: plat.label, value: plat.id.value };
+			allNodes[plat.id.value] = { name: plat.euid, value: plat.id.value };
 		}
+
+		if (plat.prefLabel && !allNodes[plat.id.value].name.startsWith(plat.prefLabel)) {
+			allNodes[plat.id.value].name = plat.prefLabel + ' / ' + allNodes[plat.id.value].name;
+		}
+
 		for (const sensor of plat.sensors) {
 			// TODO: this should be isPartOf
 			if (allSensors[sensor.id.value] === undefined) {

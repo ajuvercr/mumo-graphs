@@ -1,10 +1,11 @@
 import { Parser, type Term } from 'n3';
 import { writable } from 'svelte/store';
 import { base } from '$app/paths';
-import { replicateLDES } from 'ldes-client';
+import { Client, replicateLDES } from 'ldes-client';
 import { BasicLens, extractShapes, type Cont } from 'rdf-lens';
 
 import platform_shape from '$lib/configs/platform_shape.ttl?raw';
+import { myFetch } from './profile';
 
 export type Object = {
 	id: Term;
@@ -157,6 +158,8 @@ export type Platform = {
 	id: Term;
 	modified: Term;
 	label: string;
+	prefLabel?: string;
+	euid: string;
 	location?: string;
 	sensors: {
 		id: Term;
@@ -166,11 +169,11 @@ export type Platform = {
 	}[];
 };
 
-export async function consumePlatforms(
+export function consumePlatforms(
 	onPlatform: (pl: Platform) => void,
 	f: typeof fetch,
 	url = 'http://localhost:8000/by-name/index.trig'
-) {
+): ReadableStreamDefaultReader {
 	console.log({ url });
 	const shapes = extractShapes(new Parser().parse(platform_shape));
 	const platform = <BasicLens<Cont, Platform>>shapes.lenses['Platform'];
@@ -178,25 +181,29 @@ export async function consumePlatforms(
 	const client = replicateLDES(
 		{
 			url,
-			fetch: proxy_fetch(f),
+			fetch: enhanced_fetch(myFetch),
 			materialize: true,
 			urlIsView: true
 		},
-		'none'
+		'descending'
 	);
 
 	const stream = client.stream().getReader();
-	let mem = await stream.read();
-	while (mem && !mem.done) {
-		console.log('Got member');
+	(async () => {
+		let mem = await stream.read();
+		while (mem && !mem.done) {
+			console.log('Got member');
 
-		const pl = platform.execute(mem.value);
-		onPlatform(pl);
+			const pl = platform.execute(mem.value);
+			onPlatform(pl);
 
-		mem = await stream.read();
-	}
+			mem = await stream.read();
+		}
 
-	console.log('Finished');
+		console.log('Finished');
+	})();
+
+	return stream;
 }
 
 export type ChartLayout = {
