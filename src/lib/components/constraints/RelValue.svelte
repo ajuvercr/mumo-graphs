@@ -1,14 +1,13 @@
 <script lang="ts">
 	import 'flatpickr/dist/flatpickr.css';
-	import type { RelationParameters, RelationConstraint, RelationTypes } from '$lib/constraints';
-	import { tooltip } from '$lib/utils';
+	import type { RelationParameters, RelationConstraint } from '$lib/constraints';
+	import { tooltip, capitalize } from '$lib/utils';
 	import RadioType from '../parts/RadioType.svelte';
 	import flatpickr from 'flatpickr';
 
 	export let constraintData: RelationConstraint;
 	export let rel: RelationParameters;
 
-	let properties = rel.properties;
 	let relations = rel.relations;
 
 	let choice: 'text' | 'number' | 'date' = 'text';
@@ -78,32 +77,17 @@
 		return null;
 	}
 
-	function findPropertyIndex(properties: RelationTypes) {
-		return properties.findIndex((x) => x.name === constraintData.property?.name);
-	}
-
-	$: properties = rel.properties;
 	$: relations = rel.relations;
-
 	$: validate(value, constraintData.choice);
 	$: startFp = setupDateInput(startInput, constraintData.choice);
-
-	$: propertyIdx = findPropertyIndex(properties);
 	$: typeIdx = relations.findIndex((x) => x.name === constraintData.type?.name);
 </script>
 
 <div>
-	<select
-		bind:value={propertyIdx}
-		on:change={() => (constraintData.property = properties[propertyIdx])}
-	>
-		{#each properties as opt, i}
-			<option value={i}>{opt.name}</option>
-		{/each}
-	</select>
+	<span><strong>{constraintData.property.name}</strong>: </span>
 	<select bind:value={typeIdx} on:change={() => (constraintData.type = relations[typeIdx])}>
 		{#each relations as opt, i}
-			<option value={i}>{opt.name}</option>
+			<option value={i}>{capitalize(opt.name)}</option>
 		{/each}
 	</select>
 	<input

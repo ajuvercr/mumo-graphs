@@ -2,15 +2,22 @@
 	import { consumePlatforms, type Platform } from '$lib/utils';
 	import { onMount } from 'svelte';
 
-	import { defaultProperties, defaultRelations } from '$lib/constraints';
+	import {
+		defaultProperties,
+		defaultRelations,
+		isListConstraint,
+		isMultiConstraint,
+		isTimeIntervalConstraint
+	} from '$lib/constraints';
 	import { Location, NodePath, TypePath } from '$lib/paths';
 	import LdesGraph from '$lib/components/LdesGraph.svelte';
 	import type { Config } from '$lib/components/config/LdesConfig.svelte';
 	import LdesConfig from '$lib/components/config/LdesConfig.svelte';
 	import { settings, type Settings } from '$lib/settings';
-	import { get } from 'svelte/store';
+	import { get, writable, type Writable } from 'svelte/store';
 	import { profile } from '$lib/profile';
 	import { setLogger } from 'ldes-client';
+	import { Button } from 'flowbite-svelte';
 
 	let allLocations: { [id: string]: { name: string; value: string } } = {};
 	let allNodes: { [id: string]: { name: string; value: string } } = {};
@@ -29,7 +36,7 @@
 		allNodes = {};
 		allSensors = {};
 		allTypes = {};
-		currentStream = consumePlatforms(updateFound, fetch, settings.sensorLdes);
+		currentStream = consumePlatforms(updateFound, settings.sensorLdes);
 	}
 
 	let currentSettings = get(settings);
@@ -50,19 +57,31 @@
 	let nodes: { name: string; value: string }[] = [];
 	let types: { name: string; value: string }[] = [];
 
+	const nameMap: { [id: string]: string } = {};
+
 	function updateFound(plat: Platform) {
 		if (plat.location && allLocations[plat.location] === undefined) {
 			allLocations[plat.location] = { name: plat.location, value: plat.location };
 		}
 
-		console.log(plat);
 		if (allNodes[plat.id.value] === undefined) {
 			allNodes[plat.id.value] = { name: plat.euid, value: plat.id.value };
+		}
+
+		if (plat.prefLabel && allNodes[plat.id.value].name === plat.euid) {
+			allNodes[plat.id.value].name = plat.prefLabel;
 		}
 
 		if (plat.prefLabel && !allNodes[plat.id.value].name.startsWith(plat.prefLabel)) {
 			allNodes[plat.id.value].name = plat.prefLabel + ' / ' + allNodes[plat.id.value].name;
 		}
+
+		// nameMap.update((map) => {
+		nameMap[plat.label] = allNodes[plat.id.value].name;
+		// return map;
+		// });
+
+		addGraphForPlatform(allNodes[plat.id.value]);
 
 		for (const sensor of plat.sensors) {
 			// TODO: this should be isPartOf
@@ -82,6 +101,62 @@
 		types = Object.values(allTypes);
 		nodes = Object.values(allNodes);
 		console.log(nodes);
+	}
+
+	function addGraphForPlatform(plat: { name: string; value: string }) {
+		let nodeChild: { name: string; value: string } | undefined = undefined;
+		const name = 'Graph for ' + plat.name;
+
+		for (const item of items) {
+			const cons = item.config.constraint;
+			if (isListConstraint(cons)) {
+				for (const child of cons.children) {
+					if (isMultiConstraint(child)) {
+						const option = child.values.find((value) => value.value == plat.value);
+						if (option) {
+							nodeChild = option;
+							item.config.name = name;
+							nodeChild.name = plat.name;
+							return;
+						}
+					}
+				}
+			}
+		}
+		const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+		const constraint: Config['constraint'] = {
+			kind: 'and',
+			children: [
+				{
+					kind: 'multi',
+					name: 'nodes',
+					values: [plat]
+				},
+				{
+					kind: 'rel',
+					property: {
+						name: 'Time',
+						value: 'http://def.isotc211.org/iso19156/2011/Observation#OM_Observation.resultTime'
+					},
+					type: {
+						name: 'Greater Than',
+						value: 'https://w3id.org/tree#GreaterThanRelation'
+					},
+					value: oneWeekAgo.toISOString(),
+					choice: 'date'
+				}
+			]
+		};
+
+		const config = {
+			config: {
+				url: currentSettings.dataLdes,
+				name,
+				constraint
+			},
+			idx
+		};
+		items = [...items, config];
 	}
 
 	async function save(xs: typeof items) {
@@ -125,6 +200,7 @@
 		<div class="card">
 			<LdesGraph
 				{lookup}
+				{nameMap}
 				url={config.config.url}
 				config={config.config}
 				on:edit={() => {
@@ -139,7 +215,7 @@
 		</div>
 	{/each}
 
-	<button
+	<Button
 		on:click={() =>
 			(items = [
 				...items,
@@ -154,7 +230,7 @@
 					},
 					idx
 				}
-			])}>New Graph</button
+			])}>New Graph</Button
 	>
 </div>
 
@@ -163,6 +239,8 @@
 		margin: auto;
 		width: 80vw;
 		max-width: 1200px;
+		margin-top: 1em;
+		margin-bottom: 1em;
 	}
 	.card {
 		padding: 1rem;

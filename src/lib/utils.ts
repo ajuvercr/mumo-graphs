@@ -1,7 +1,6 @@
 import { Parser, type Term } from 'n3';
 import { writable } from 'svelte/store';
-import { base } from '$app/paths';
-import { Client, replicateLDES } from 'ldes-client';
+import { replicateLDES } from 'ldes-client';
 import { BasicLens, extractShapes, type Cont } from 'rdf-lens';
 
 import platform_shape from '$lib/configs/platform_shape.ttl?raw';
@@ -154,6 +153,15 @@ export function tooltip(node: HTMLElement, params: { text?: string; kind?: 'norm
 	};
 }
 
+export function capitalize(st: string) {
+	const capital = st[0]?.toUpperCase() || '';
+	if (capital != st[0]) {
+		return capital + st.slice(1);
+	} else {
+		return st;
+	}
+}
+
 export type Platform = {
 	id: Term;
 	modified: Term;
@@ -171,7 +179,6 @@ export type Platform = {
 
 export function consumePlatforms(
 	onPlatform: (pl: Platform) => void,
-	f: typeof fetch,
 	url = 'http://localhost:8000/by-name/index.trig'
 ): ReadableStreamDefaultReader {
 	console.log({ url });
@@ -185,7 +192,7 @@ export function consumePlatforms(
 			materialize: true,
 			urlIsView: true
 		},
-		'descending'
+		'none'
 	);
 
 	const stream = client.stream().getReader();

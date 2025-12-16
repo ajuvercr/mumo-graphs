@@ -101,11 +101,6 @@ export function constraintToCondition(c: Constraint, lookup: Lookup): Condition 
 		}
 		if (c.values.length === 0) return new EmptyCondition();
 
-		console.log(
-			'Setting up multi constrained equal to',
-			c.values.map((x) => x.value),
-			v.quads
-		);
 		const items = c.values.map(
 			(x) =>
 				new LeafCondition({

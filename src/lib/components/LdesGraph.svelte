@@ -30,6 +30,13 @@
 	import { myFetch } from '$lib/profile';
 
 	const dispatch = createEventDispatcher<{ change: Config; delete: null; edit: null }>();
+	export let nameMap: { [id: string]: string };
+
+	function getName(id: string) {
+		const name = nameMap[id];
+		if (name !== undefined) return name;
+		return id;
+	}
 
 	let charts: {
 		type: string;
@@ -67,7 +74,7 @@
 	}
 
 	function addMeasurement(measurement: Measurement) {
-		const sensorName = measurement.nodeName;
+		const sensorName = getName(measurement.nodeName);
 		let chart = charts.find((x) => x.type === measurement.result.valueName);
 		if (!chart) {
 			nameToIdMap[measurement.nodeName] = measurement.node.value;
@@ -128,6 +135,7 @@
 
 	let streaming = false;
 	async function readStream() {
+		console.log(nameMap);
 		streaming = true;
 		let el = await stream.read();
 		console.log('first member!');
@@ -252,7 +260,6 @@
 	export let layouts: ChartLayout[] = [];
 
 	$: condition = constraintToCondition(config.constraint, lookup);
-	$: console.log('Setting up multi constrained equal to', condition);
 </script>
 
 <section>

@@ -6,6 +6,8 @@
 		RelationParameters,
 		RelationConstraint
 	} from '$lib/constraints';
+	import { capitalize } from '$lib/utils';
+	import { Button } from 'flowbite-svelte';
 	import RadioType from '../parts/RadioType.svelte';
 	import Base from './Base.svelte';
 
@@ -22,18 +24,17 @@
 		constraintData = { kind: constraintData.kind, children: [...constraintData.children, child] };
 	}
 
-	function newRelProperty(): RelationConstraint {
+	function newRelProperty(property: { name: string; value: string }): RelationConstraint {
 		return {
 			kind: 'rel',
-			property: relationParameters.properties[0],
+			property,
 			type: relationParameters.relations[0],
 			value: '',
-			choice: 'text'
+			choice: 'date'
 		};
 	}
 
 	let opts = Object.keys(multiOptions);
-	let selectedKind = opts[0];
 </script>
 
 <div class="list">
@@ -50,25 +51,27 @@
 	</div>
 	<footer>
 		<div class="add-menu">
-			<button on:click={() => addConstraintToList({ kind: 'and', children: [] })}>+ AND</button>
-			<button on:click={() => addConstraintToList({ kind: 'or', children: [] })}>+ OR</button>
-			<div class="others">
-				<button
-					on:click={() =>
-						addConstraintToList({
-							kind: 'multi',
-							name: selectedKind,
-							values: []
-						})}
-					>+ Add
-				</button>
-				<select bind:value={selectedKind}>
-					{#each opts as opt}
-						<option value={opt}>{opt}</option>
-					{/each}
-				</select>
-			</div>
-			<button on:click={() => addConstraintToList(newRelProperty())}>+ Relation</button>
+			<span>Add constrain on:</span>
+			<Button
+				color="alternative"
+				class="btn"
+				on:click={() => addConstraintToList({ kind: 'and', children: [] })}>AND</Button
+			>
+			<Button color="alternative" on:click={() => addConstraintToList({ kind: 'or', children: [] })}
+				>OR</Button
+			>
+			{#each opts as opt}
+				<Button
+					color="alternative"
+					on:click={() => addConstraintToList({ kind: 'multi', name: opt, values: [] })}
+					>{capitalize(opt)}</Button
+				>
+			{/each}
+			{#each relationParameters.properties as rel}
+				<Button color="alternative" on:click={() => addConstraintToList(newRelProperty(rel))}>
+					{capitalize(rel.name)}</Button
+				>
+			{/each}
 		</div>
 	</footer>
 </div>
@@ -96,7 +99,10 @@
 	}
 	.add-menu {
 		display: flex;
-		gap: 2em;
+		gap: 1em;
+		margin-top: 1em;
+		margin-left: 1em;
+		align-items: center;
 	}
 
 	.child > div {

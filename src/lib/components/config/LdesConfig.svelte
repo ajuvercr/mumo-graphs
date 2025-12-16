@@ -60,8 +60,8 @@
 	let showDebug = false;
 </script>
 
-<div class="modal" bind:this={modal} on:click={clicked}>
-	<div class="wrapper">
+<div class="modal" bind:this={modal} on:click={clicked} aria-hidden="true">
+	<div class="wrapper" aria-modal="true" role="dialog">
 		<div>
 			<Label for="name" class="mb-2">Graph name</Label>
 			<Input type="text" id="name" placeholder="Namme" bind:value={config.name} />
@@ -97,8 +97,9 @@
 		height: 100vh;
 		top: 0;
 		left: 0;
-		padding: 4rem;
+		padding: 2rem;
 		background-color: rgba(0, 0, 0, 0.2);
+		overflow: scroll;
 	}
 	.wrapper {
 		background-color: white;
@@ -107,6 +108,5 @@
 		display: flex;
 		flex-direction: column;
 		gap: 2rem;
-		max-height: 80vh;
 	}
 </style>
