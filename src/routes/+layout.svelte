@@ -2,6 +2,7 @@
 	import Login from '$lib/components/Login.svelte';
 	import { onMount } from 'svelte';
 	import '../app.css';
+	import { base } from '$app/paths';
 	import { Button, Navbar, NavBrand, NavHamburger } from 'flowbite-svelte';
 	import { storage } from '$lib/storage';
 	import { handleOidcFlow, getSessionFromCC } from '$lib/profile';
@@ -28,14 +29,14 @@
 </script>
 
 <Navbar class="top-0 z-20 border-b  px-2 py-2.5  sm:px-4">
-	<NavBrand href="/">
+	<NavBrand href={base}>
 		<span class="self-center whitespace-nowrap text-xl font-semibold dark:text-white"
 			>Mumo - Graphs</span
 		>
 	</NavBrand>
 	<div class="flex md:order-2">
 		<Login />
-		<Button href="/settings" color="alternative">Settings</Button>
+		<Button href="{base}/settings" color="alternative">Settings</Button>
 		<NavHamburger />
 	</div>
 </Navbar>
