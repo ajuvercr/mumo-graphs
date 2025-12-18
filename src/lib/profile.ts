@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { getDefaultSession } from '@inrupt/solid-client-authn-browser';
+import { getDefaultSession, handleIncomingRedirect } from '@inrupt/solid-client-authn-browser';
 import { storage } from './storage';
 import { base64Encode, decodeBase64, decodeJwt } from './utils';
 
@@ -27,17 +27,18 @@ export async function logoutFetch() {
 }
 
 export async function handleOidcFlow(): Promise<boolean> {
-	const url = new URL(window.location.href);
-	const hasAuthParams = url.searchParams.has('code') || url.searchParams.has('error');
+	const isLoggingIn = window.localStorage.getItem('oidcFlow');
+	window.localStorage.setItem('oidcFlow', 'true');
 
-	await new Promise((res) => setTimeout(res, 500));
-	// try {
-	// 	if (hasAuthParams) {
-	// 		await handleIncomingRedirect({
-	// 			restorePreviousSession: true
-	// 		});
-	// 	}
-	// } catch (e) {}
+	const url = new URL(window.location.href);
+	const codeFlow = url.searchParams.get('code');
+	if (!isLoggingIn || codeFlow) {
+		console.log('Trying to recover session');
+		await handleIncomingRedirect({ restorePreviousSession: true });
+	} else {
+		console.log('Already recovered session');
+	}
+	window.localStorage.removeItem('oidcFlow');
 
 	return await findDefaultSession();
 }
