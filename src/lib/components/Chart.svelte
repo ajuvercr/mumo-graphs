@@ -43,26 +43,6 @@
 		ScatterController,
 		zoomPlugin
 	);
-	// function triggerTooltip(chart: ChartJS) {
-	// 	const tooltip = chart && chart.tooltip;
-	//
-	// 	if (!tooltip) {
-	// 		return;
-	// 	}
-	//
-	// 	console.log('tooltip', tooltip);
-	// 	console.log('Active elements', tooltip.getActiveElements());
-	//
-	// 	chart.update();
-	// }
-	//
-	// function updateData(chart: ChartJS) {
-	// 	for (let ds of data.datasets) {
-	// 		ds.data = ds.data.map((x, i) => x + 10 * i * i);
-	// 	}
-	//
-	// 	chart.update();
-	// }
 
 	export let chart: ChartJS<
 		keyof ChartTypeRegistry,

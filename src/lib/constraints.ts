@@ -9,6 +9,7 @@ import {
 import { DataFactory } from 'n3';
 import { pred } from 'rdf-lens';
 import type { Path } from './paths';
+import type { Term } from '@rdfjs/types';
 
 const { namedNode, literal } = DataFactory;
 
@@ -120,14 +121,25 @@ export function constraintToCondition(c: Constraint, lookup: Lookup): Condition 
 			return new EmptyCondition();
 		}
 		const path = namedNode(c.property.value);
-		const compareType =
-			typeof c.value === 'string' ? 'string' : typeof c.value === 'number' ? 'float' : 'date';
-		const value =
-			typeof c.value === 'string'
-				? literal(c.value)
-				: typeof c.value === 'number'
-					? literal(c.value, XSD.terms.integer)
-					: literal(c.value, XSD.terms.dateTime);
+		let compareType = 'string';
+		let value: Term;
+		switch (c.choice) {
+			case 'text':
+				compareType = 'string';
+				value = literal(c.value);
+				break;
+
+			case 'date':
+				compareType = 'date';
+				value = literal(c.value, XSD.terms.dateTime);
+				break;
+			case 'number':
+				compareType = 'float';
+				value = literal(c.value, XSD.terms.integer);
+				break;
+		}
+
+		console.log({ compareType, value });
 		return new LeafCondition({
 			relationType: namedNode(c.type.value),
 			path: pred(path),

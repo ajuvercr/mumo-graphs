@@ -33,7 +33,6 @@ export const options: DeepPartial<
 	// maintainAspectRatio: true,
 	datasets: {
 		scatter: {
-			fill: true,
 			showLine: true
 		}
 	},
@@ -47,16 +46,15 @@ export const options: DeepPartial<
 			}
 		},
 		y: {
-			beginAtZero: true
+			beginAtZero: false
 		}
 	},
 	responsive: true,
 	maintainAspectRatio: true,
 	plugins: {
-		decimation: {
-			enabled: true,
-			algorithm: 'lttb'
-			// Other configuration options
+		tooltip: {
+			position: 'average',
+			intersect: false
 		},
 		zoom: {
 			pan: {

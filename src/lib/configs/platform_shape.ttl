@@ -39,6 +39,11 @@
     sh:datatype xsd:string;
     sh:maxCount 1;
   ], [
+    sh:path <http://www.cidoc-crm.org/cidoc-crm/groupName>;
+    sh:name "locationName";
+    sh:datatype xsd:string;
+    sh:maxCount 1;
+  ], [
     sh:path sosa:hosts;
     sh:name "sensors";
     sh:class <Sensor>;

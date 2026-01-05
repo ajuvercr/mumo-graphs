@@ -6,15 +6,14 @@
 		defaultProperties,
 		defaultRelations,
 		isListConstraint,
-		isMultiConstraint,
-		isTimeIntervalConstraint
+		isMultiConstraint
 	} from '$lib/constraints';
 	import { Location, NodePath, TypePath } from '$lib/paths';
 	import LdesGraph from '$lib/components/LdesGraph.svelte';
 	import type { Config } from '$lib/components/config/LdesConfig.svelte';
 	import LdesConfig from '$lib/components/config/LdesConfig.svelte';
 	import { settings, type Settings } from '$lib/settings';
-	import { get, writable, type Writable } from 'svelte/store';
+	import { get } from 'svelte/store';
 	import { profile } from '$lib/profile';
 	import { setLogger } from 'ldes-client';
 	import { Button } from 'flowbite-svelte';
@@ -61,7 +60,23 @@
 
 	function updateFound(plat: Platform) {
 		if (plat.location && allLocations[plat.location] === undefined) {
-			allLocations[plat.location] = { name: plat.location, value: plat.location };
+			allLocations[plat.location] = {
+				name: plat.locationName || plat.location,
+				value: plat.location
+			};
+
+			addGraphForLocation(allLocations[plat.location]);
+		}
+
+		// prepend the new found name
+		if (
+			plat.location &&
+			plat.locationName &&
+			allLocations[plat.location] !== undefined &&
+			!allLocations[plat.location].name.startsWith(plat.locationName)
+		) {
+			allLocations[plat.location].name =
+				plat.locationName + ' / ' + allLocations[plat.location].name;
 		}
 
 		if (allNodes[plat.id.value] === undefined) {
@@ -80,8 +95,6 @@
 		nameMap[plat.label] = allNodes[plat.id.value].name;
 		// return map;
 		// });
-
-		addGraphForPlatform(allNodes[plat.id.value]);
 
 		for (const sensor of plat.sensors) {
 			// TODO: this should be isPartOf
@@ -103,34 +116,35 @@
 		console.log(nodes);
 	}
 
-	function addGraphForPlatform(plat: { name: string; value: string }) {
+	function addGraphForLocation(location: { name: string; value: string }) {
 		let nodeChild: { name: string; value: string } | undefined = undefined;
-		const name = 'Graph for ' + plat.name;
+		const name = location.name;
 
 		for (const item of items) {
 			const cons = item.config.constraint;
 			if (isListConstraint(cons)) {
 				for (const child of cons.children) {
 					if (isMultiConstraint(child)) {
-						const option = child.values.find((value) => value.value == plat.value);
+						const option = child.values.find((value) => value.value == location.value);
 						if (option) {
 							nodeChild = option;
 							item.config.name = name;
-							nodeChild.name = plat.name;
+							nodeChild.name = location.name;
 							return;
 						}
 					}
 				}
 			}
 		}
+
 		const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 		const constraint: Config['constraint'] = {
 			kind: 'and',
 			children: [
 				{
 					kind: 'multi',
-					name: 'nodes',
-					values: [plat]
+					name: 'locations',
+					values: [location]
 				},
 				{
 					kind: 'rel',

@@ -169,6 +169,7 @@ export type Platform = {
 	prefLabel?: string;
 	euid: string;
 	location?: string;
+	locationName?: string;
 	sensors: {
 		id: Term;
 		label: string;
@@ -192,7 +193,7 @@ export function consumePlatforms(
 			materialize: true,
 			urlIsView: true
 		},
-		'none'
+		'ascending'
 	);
 
 	const stream = client.stream().getReader();
