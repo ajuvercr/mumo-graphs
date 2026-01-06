@@ -1,25 +1,65 @@
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import { getDefaultSession, handleIncomingRedirect } from '@inrupt/solid-client-authn-browser';
 import { storage } from './storage';
 import { base64Encode, decodeBase64, decodeJwt } from './utils';
+import type { Config } from '$lib/utils';
 
 import * as DPoP from 'dpop';
+import { setState } from './settings';
+
+export type State = {
+	sensors: string;
+	data: string;
+	items?: { config: Config; idx: number }[];
+};
 
 export type Profile = {
 	webId?: string;
+	state: State;
 };
-export const profile = writable<Profile>({});
+
+// "https://another.mumodashboard.be/.oidc/token"
+const defaultState = {
+	sensors: 'https://another.mumodashboard.be/data/by-location/root/index.trig',
+	data: 'https://another.mumodashboard.be/sensors/by-location/index.trig'
+};
+
+function getStateFromTokenEndpoint(endpoint: string): State {
+	if (endpoint.endsWith('.oidc/token')) {
+		const st = {
+			sensors: endpoint.replace('.oidc/token', 'sensors/by-location/index.trig'),
+			data: endpoint.replace('.oidc/token', 'data/by-location/root/index.trig')
+		};
+		setState(st);
+		return st;
+	} else {
+		return defaultState;
+	}
+}
+
+export const profile = writable<Profile>({
+	state: defaultState
+});
 export const myFetch: typeof fetch = (a, b) => localFetch(a, b);
 
 async function findDefaultSession(): Promise<boolean> {
 	const session = getDefaultSession();
-	console.log({ session });
 	const webId = session.info.webId;
 
-	profile.set({ webId });
+	profile.set({
+		webId,
+		state: Object.assign({}, defaultState, { items: itemsForWebId(webId) })
+	});
 	localFetch = (a, b) => session.fetch(a, b);
 
 	return session.info.isLoggedIn;
+}
+
+export function save(items: { config: Config; idx: number }[]) {
+	let p = get(profile);
+	if (p.webId) {
+		window.localStorage.setItem(p.webId, JSON.stringify(items));
+	}
 }
 
 export async function logoutFetch() {
@@ -50,6 +90,19 @@ function scheduleRefresh(expiresIn: number) {
 		console.log('refreshing those tokens');
 		getSessionFromCC();
 	}, refreshAt);
+}
+
+function itemsForWebId(webId?: string): { config: Config; idx: number }[] | undefined {
+	console.log('Getting items for', webId);
+	try {
+		if (webId) {
+			const stored = localStorage.getItem(webId);
+			console.log('Getting items for', webId, stored);
+			if (stored) {
+				return JSON.parse(stored);
+			}
+		}
+	} catch (ex) {}
 }
 
 export async function getSessionFromCC(): Promise<boolean> {
@@ -86,7 +139,12 @@ export async function getSessionFromCC(): Promise<boolean> {
 		console.log(json);
 
 		const info = decodeJwt(json.access_token);
-		profile.set({ webId: info.webid });
+		profile.set({
+			webId: info.webid,
+			state: Object.assign({}, getStateFromTokenEndpoint(decoded.endpoint), {
+				items: itemsForWebId(info.webid)
+			})
+		});
 
 		console.log(decodeJwt(json.access_token));
 

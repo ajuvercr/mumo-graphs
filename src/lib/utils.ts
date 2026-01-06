@@ -5,7 +5,13 @@ import { BasicLens, extractShapes, type Cont } from 'rdf-lens';
 
 import platform_shape from '$lib/configs/platform_shape.ttl?raw';
 import { myFetch } from './profile';
+import type { Constraint } from './constraints';
 
+export type Config = {
+	name: string;
+	url: string;
+	constraint: Constraint;
+};
 export type Object = {
 	id: Term;
 	name: string;

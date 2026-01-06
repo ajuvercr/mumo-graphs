@@ -10,11 +10,11 @@
 	} from '$lib/constraints';
 	import { Location, NodePath, TypePath } from '$lib/paths';
 	import LdesGraph from '$lib/components/LdesGraph.svelte';
-	import type { Config } from '$lib/components/config/LdesConfig.svelte';
+	import type { Config } from '$lib/utils';
 	import LdesConfig from '$lib/components/config/LdesConfig.svelte';
 	import { settings, type Settings } from '$lib/settings';
 	import { get } from 'svelte/store';
-	import { profile } from '$lib/profile';
+	import { profile, save } from '$lib/profile';
 	import { setLogger } from 'ldes-client';
 	import { Button } from 'flowbite-svelte';
 
@@ -26,7 +26,7 @@
 	let currentModal: number | undefined = undefined;
 	let currentStream: ReadableStreamDefaultReader | undefined = undefined;
 
-	function resetPlatforms(settings: Settings) {
+	function resetPlatforms(settings: Settings, updateGraphs: boolean) {
 		if (currentStream !== undefined) {
 			currentStream.cancel();
 			currentStream = undefined;
@@ -35,22 +35,33 @@
 		allNodes = {};
 		allSensors = {};
 		allTypes = {};
-		currentStream = consumePlatforms(updateFound, settings.sensorLdes);
+		currentStream = consumePlatforms((p) => updateFound(p, updateGraphs), settings.sensorLdes);
 	}
 
 	let currentSettings = get(settings);
 
-	settings.subscribe(resetPlatforms);
-	profile.subscribe(() => resetPlatforms(currentSettings));
-
 	let items: { config: Config; idx: number }[] = [];
+	settings.subscribe((settings) => resetPlatforms(settings, false));
+	profile.subscribe((p) => {
+		console.log('Profile', p.state);
+		resetPlatforms(currentSettings, p.state.items === undefined);
+		items = p.state.items || [];
+	});
+
 	let onServer = true;
 	onMount(async () => {
 		setLogger({});
 		currentSettings = get(settings);
-		setTimeout(() => resetPlatforms(currentSettings), 100);
+		setTimeout(() => {
+			resetPlatforms(currentSettings, false);
+		}, 100);
 		onServer = false;
 	});
+
+	function reset() {
+		items = [];
+		resetPlatforms(get(settings), true);
+	}
 
 	let locations: { name: string; value: string }[] = [];
 	let nodes: { name: string; value: string }[] = [];
@@ -58,14 +69,17 @@
 
 	const nameMap: { [id: string]: string } = {};
 
-	function updateFound(plat: Platform) {
+	function updateFound(plat: Platform, updateGraphs: boolean) {
+		console.log({ updateGraphs });
 		if (plat.location && allLocations[plat.location] === undefined) {
 			allLocations[plat.location] = {
 				name: plat.locationName || plat.location,
 				value: plat.location
 			};
 
-			addGraphForLocation(allLocations[plat.location]);
+			if (updateGraphs) {
+				addGraphForLocation(allLocations[plat.location]);
+			}
 		}
 
 		// prepend the new found name
@@ -173,8 +187,9 @@
 		items = [...items, config];
 	}
 
-	async function save(xs: typeof items) {
+	async function saveIt(xs: typeof items) {
 		if (onServer) return;
+		save(xs);
 		// await fetch('/app/api/state', {
 		// 	body: JSON.stringify(xs.map((x) => x.config)),
 		// 	credentials: 'include',
@@ -182,7 +197,7 @@
 		// });
 	}
 
-	$: save(items);
+	$: saveIt(items);
 	$: idx = items.map((x) => x.idx + 1).reduceRight((a, b) => (a > b ? a : b), 0);
 
 	const lookup = {
@@ -246,6 +261,7 @@
 				}
 			])}>New Graph</Button
 	>
+	<Button color="alternative" on:click={reset}>Reset Graphs</Button>
 </div>
 
 <style>
@@ -262,11 +278,5 @@
 		border-radius: 2rem;
 		width: 100%;
 		margin-bottom: 40px;
-	}
-
-	section {
-		padding: 0.3em;
-		display: inline-block;
-		flex-wrap: wrap;
 	}
 </style>

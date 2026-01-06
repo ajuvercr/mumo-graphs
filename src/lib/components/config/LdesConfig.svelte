@@ -1,19 +1,11 @@
-<script context="module" lang="ts">
-	import type { Constraint, MultiParameters, RelationParameters } from '$lib/constraints';
-
-	export type Config = {
-		name: string;
-		url: string;
-		constraint: Constraint;
-	};
-</script>
-
 <script lang="ts">
+	import type { MultiParameters, RelationParameters } from '$lib/constraints';
 	import BaseConstraint from '$lib/components/constraints/Base.svelte';
 	import { Input, Label, Button, Select } from 'flowbite-svelte';
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { settings } from '$lib/settings';
 	import { get } from 'svelte/store';
+	import type { Config } from '$lib/utils';
 
 	export let config: Config;
 

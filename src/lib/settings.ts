@@ -6,10 +6,10 @@ export type Settings = {
 	dataOptions: string[];
 };
 
-const localHost = 'https://another.mumodashboard.be/data/by-sensor/root/index.trig';
+const localHost = 'https://another.mumodashboard.be/data/by-location/root/index.trig';
 
 export const DEFAULT_SETTINGS: Settings = {
-	sensorLdes: 'https://another.mumodashboard.be/sensors/by-name/index.trig',
+	sensorLdes: 'https://another.mumodashboard.be/sensors/by-location/index.trig',
 	dataLdes: localHost,
 	dataOptions: [localHost]
 };
@@ -29,3 +29,15 @@ function loadSettings(): Settings {
 }
 
 export const settings = writable<Settings>(loadSettings());
+
+export function setState(state: { sensors: string; data: string }) {
+	settings.update((x) => {
+		x.dataLdes = state.data;
+		x.sensorLdes = state.sensors;
+		const present = x.dataOptions.find((x) => x == state.data);
+		if (!present) {
+			x.dataOptions.push(state.data);
+		}
+		return x;
+	});
+}

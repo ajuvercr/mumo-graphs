@@ -113,7 +113,8 @@
 		{/each}
 	</fieldset>
 
-	<Button on:click={reset}>Reset Settings</Button>
+	<Button>Save Settings</Button>
+	<Button color="alternative" on:click={reset}>Reset Settings</Button>
 </div>
 
 <style>
