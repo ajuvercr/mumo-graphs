@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { settings, type Source } from '$lib/settings';
 	import { Button, Input } from 'flowbite-svelte';
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 
 	let name = '';
 	let sensorLdes = '';
@@ -34,12 +34,14 @@
 		return url;
 	}
 
-	// persist settings
-	const unsubscribe = settings.subscribe((value) => {
-		if (localStorage.setItem) localStorage.setItem('settings', JSON.stringify(value));
-	});
+	onMount(() => {
+		// persist settings
+		const unsubscribe = settings.subscribe((value) => {
+			if (localStorage.setItem) localStorage.setItem('settings', JSON.stringify(value));
+		});
 
-	onDestroy(unsubscribe);
+		onDestroy(unsubscribe);
+	});
 </script>
 
 <div class="centered space-y-6 p-4">
