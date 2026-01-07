@@ -2,6 +2,7 @@
 	import { settings, type Source } from '$lib/settings';
 	import { Button, Input } from 'flowbite-svelte';
 	import { onDestroy, onMount } from 'svelte';
+	import type { Unsubscriber } from 'svelte/store';
 
 	let name = '';
 	let sensorLdes = '';
@@ -22,8 +23,9 @@
 		name = sensorLdes = dataLdes = '';
 	}
 
-	function deleteSource(source: Source) {
-		settings.update((sources) => sources.filter((s) => s !== source));
+	function deleteSource(source: string) {
+		console.log('deleting', source);
+		settings.update((sources) => sources.filter((s) => s.name !== source));
 	}
 
 	function prettyUrl(url: string, base: string) {
@@ -34,13 +36,16 @@
 		return url;
 	}
 
+	let unsubscribe: Unsubscriber | undefined = undefined;
 	onMount(() => {
 		// persist settings
-		const unsubscribe = settings.subscribe((value) => {
-			if (localStorage.setItem) localStorage.setItem('settings', JSON.stringify(value));
+		unsubscribe = settings.subscribe((value) => {
+			localStorage.setItem('settings', JSON.stringify(value));
 		});
+	});
 
-		onDestroy(unsubscribe);
+	onDestroy(() => {
+		if (unsubscribe) unsubscribe();
 	});
 </script>
 
@@ -76,7 +81,9 @@
 						</td>
 
 						<td class="py-2 text-right">
-							<Button size="xs" color="red" on:click={() => deleteSource(source)}>Delete</Button>
+							<Button size="xs" color="red" on:click={() => deleteSource(source.name)}
+								>Delete</Button
+							>
 						</td>
 					</tr>
 				{/each}
