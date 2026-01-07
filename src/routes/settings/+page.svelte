@@ -1,120 +1,111 @@
 <script lang="ts">
-	import { settings, DEFAULT_SETTINGS } from '$lib/settings';
+	import { settings, type Source } from '$lib/settings';
 	import { Button, Input } from 'flowbite-svelte';
-	import { onMount } from 'svelte';
-	const data = settings;
+	import { onDestroy } from 'svelte';
 
-	// Local bindings to store values
-	let dataLdes = '';
-	let dataOptions: string[] = [];
-	let newOption = '';
+	let name = '';
 	let sensorLdes = '';
+	let dataLdes = '';
 
-	// Subscribe once — initialize values
+	function addSource() {
+		const source: Source = {
+			name: name.trim(),
+			sensorLdes: sensorLdes.trim(),
+			dataLdes: dataLdes.trim()
+		};
 
-	settings.subscribe((s) => {
-		dataLdes = s.dataLdes;
-		dataOptions = s.dataOptions;
-		sensorLdes = s.sensorLdes;
+		if (!source.name || !source.sensorLdes || !source.dataLdes) return;
 
-		console.log(s);
+		settings.update((sources) => [...sources, source]);
+
+		// reset form
+		name = sensorLdes = dataLdes = '';
+	}
+
+	function deleteSource(source: Source) {
+		settings.update((sources) => sources.filter((s) => s !== source));
+	}
+
+	function prettyUrl(url: string, base: string) {
+		const u = new URL(url);
+		if (u.hostname === base) {
+			return u.pathname;
+		}
+		return url;
+	}
+
+	// persist settings
+	const unsubscribe = settings.subscribe((value) => {
+		if (localStorage.setItem) localStorage.setItem('settings', JSON.stringify(value));
 	});
 
-	// Update the store anytime the selected value changes
-
-	function selectOption(opt: string) {
-		settings.update((s) => ({
-			...s,
-			dataLdes: opt
-		}));
-	}
-
-	function addOption() {
-		if (!newOption.trim()) return;
-
-		const value = newOption.trim();
-
-		settings.update((s) => ({
-			...s,
-			dataOptions: [...s.dataOptions, value]
-		}));
-
-		newOption = '';
-	}
-
-	function deleteOption(option: string) {
-		settings.update((s) => {
-			const newOptions = s.dataOptions.filter((x) => x !== option);
-
-			// Fix selection if the selected value was deleted
-			const newSelected = s.dataLdes === option ? (newOptions[0] ?? '') : s.dataLdes;
-
-			return {
-				...s,
-				dataOptions: newOptions,
-				dataLdes: newSelected
-			};
-		});
-	}
-
-	onMount(() => {
-		// --- Save to localStorage on every change ---
-		settings.subscribe((value) => {
-			localStorage.setItem('settings', JSON.stringify(value));
-		});
-	});
-
-	function reset() {
-		settings.update(() => DEFAULT_SETTINGS);
-	}
+	onDestroy(unsubscribe);
 </script>
 
-<div class="centered space-y-4 p-4">
-	<fieldset class="space-y-2 rounded border p-3">
-		<legend class="mb-2 font-medium text-gray-700"> Sensor LDES location </legend>
+<div class="centered space-y-6 p-4">
+	<section class="overflow-x-auto">
+		<table class="w-full border-collapse text-sm">
+			<thead class="border-b text-left text-gray-600">
+				<tr>
+					<th class="py-2 pr-4 font-medium">Name</th>
+					<th class="py-2 pr-4 font-medium">Sensor LDES</th>
+					<th class="py-2 pr-4 font-medium">Data LDES</th>
+					<th class="py-2 text-right font-medium"></th>
+				</tr>
+			</thead>
 
-		<Input bind:value={$data.sensorLdes} placeholder="https://example.com/sensor" />
-	</fieldset>
+			<tbody>
+				{#each $settings as source (source.name)}
+					<tr class="border-b last:border-0">
+						<td class="py-2 pr-4">
+							{source.name}
+						</td>
 
-	<!-- Radio group -->
-	<fieldset class="space-y-2 rounded border p-3">
-		<legend class="mb-2 font-medium text-gray-700"> Add and choose a data LDES location </legend>
-		<div class="flex items-end gap-2">
+						<td class="max-w-[28rem] py-2 pr-4">
+							<span class="block truncate font-mono text-gray-600" title={source.sensorLdes}>
+								{prettyUrl(source.sensorLdes, source.name)}
+							</span>
+						</td>
+
+						<td class="max-w-[28rem] py-2 pr-4">
+							<span class="block truncate font-mono text-gray-600" title={source.dataLdes}>
+								{prettyUrl(source.dataLdes, source.name)}
+							</span>
+						</td>
+
+						<td class="py-2 text-right">
+							<Button size="xs" color="red" on:click={() => deleteSource(source)}>Delete</Button>
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</section>
+
+	<section class="space-y-3 rounded border p-4">
+		<h2 class="font-semibold text-gray-700">Add data source</h2>
+
+		<div class="grid grid-cols-[10rem_1fr] items-center gap-2">
+			<label class="text-sm text-gray-600">Name:</label>
+			<Input bind:value={name} placeholder="mumo.faro.be" />
+
+			<label class="text-sm text-gray-600">Sensor LDES:</label>
 			<Input
-				bind:value={newOption}
-				label="Add data option"
-				placeholder="https://example.com/ldes"
+				bind:value={sensorLdes}
+				placeholder="https://mumo.faro.be/sensors/by-location/index.trig"
 			/>
-			<Button on:click={addOption}>Add</Button>
+
+			<label class="text-sm text-gray-600">Data LDES:</label>
+			<Input
+				bind:value={dataLdes}
+				placeholder="https://mumo.faro.be/data/by-location/root/index.trig"
+			/>
 		</div>
 
-		{#each dataOptions as opt}
-			<div class="flex items-center justify-between">
-				<!-- Radio + label -->
-				<label class="flex flex-1 cursor-pointer items-center gap-2">
-					<input
-						type="radio"
-						name="data-option"
-						value={opt}
-						checked={dataLdes === opt}
-						on:change={() => selectOption(opt)}
-						class="h-4 w-4 text-blue-600 focus:ring-blue-500"
-					/>
-					<span>
-						{opt}
-					</span>
-				</label>
-
-				<!-- Delete button -->
-				<Button size="xs" color="red" class="ml-2" on:click={() => deleteOption(opt)}>
-					Delete
-				</Button>
-			</div>
-		{/each}
-	</fieldset>
-
-	<Button>Save Settings</Button>
-	<Button color="alternative" on:click={reset}>Reset Settings</Button>
+		<div class="pt-2">
+			<Button on:click={addSource}>Add source</Button>
+		</div>
+	</section>
 </div>
 
 <style>

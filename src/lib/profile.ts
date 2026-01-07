@@ -8,8 +8,6 @@ import * as DPoP from 'dpop';
 import { setState } from './settings';
 
 export type State = {
-	sensors: string;
-	data: string;
 	items?: { config: Config; idx: number }[];
 };
 
@@ -18,27 +16,20 @@ export type Profile = {
 	state: State;
 };
 
-// "https://another.mumodashboard.be/.oidc/token"
-const defaultState = {
-	sensors: 'https://another.mumodashboard.be/data/by-location/root/index.trig',
-	data: 'https://another.mumodashboard.be/sensors/by-location/index.trig'
-};
-
-function getStateFromTokenEndpoint(endpoint: string): State {
+function addLdesEndpointsToSettings(endpoint: string) {
 	if (endpoint.endsWith('.oidc/token')) {
+		const host = new URL(endpoint).hostname;
 		const st = {
-			sensors: endpoint.replace('.oidc/token', 'sensors/by-location/index.trig'),
-			data: endpoint.replace('.oidc/token', 'data/by-location/root/index.trig')
+			sensorLdes: endpoint.replace('.oidc/token', 'sensors/by-location/index.trig'),
+			dataLdes: endpoint.replace('.oidc/token', 'data/by-location/root/index.trig'),
+			name: host
 		};
 		setState(st);
-		return st;
-	} else {
-		return defaultState;
 	}
 }
 
 export const profile = writable<Profile>({
-	state: defaultState
+	state: {}
 });
 export const myFetch: typeof fetch = (a, b) => localFetch(a, b);
 
@@ -48,7 +39,7 @@ async function findDefaultSession(): Promise<boolean> {
 
 	profile.set({
 		webId,
-		state: Object.assign({}, defaultState, { items: itemsForWebId(webId) })
+		state: { items: itemsForWebId(webId) }
 	});
 	localFetch = (a, b) => session.fetch(a, b);
 
@@ -130,20 +121,19 @@ export async function getSessionFromCC(): Promise<boolean> {
 		});
 
 		const text = await response.text();
-		console.log(text);
 		const json = JSON.parse(text);
 
 		if (!json.access_token) return false;
 
 		scheduleRefresh(json.expires_in);
-		console.log(json);
 
+		addLdesEndpointsToSettings(decoded.endpoint);
 		const info = decodeJwt(json.access_token);
 		profile.set({
 			webId: info.webid,
-			state: Object.assign({}, getStateFromTokenEndpoint(decoded.endpoint), {
+			state: {
 				items: itemsForWebId(info.webid)
-			})
+			}
 		});
 
 		console.log(decodeJwt(json.access_token));

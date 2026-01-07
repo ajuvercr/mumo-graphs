@@ -1,13 +1,7 @@
 <script lang="ts">
 	import { consumePlatforms, type Platform } from '$lib/utils';
 	import { onMount } from 'svelte';
-
-	import {
-		defaultProperties,
-		defaultRelations,
-		isListConstraint,
-		isMultiConstraint
-	} from '$lib/constraints';
+	import { defaultProperties, defaultRelations } from '$lib/constraints';
 	import { Location, NodePath, TypePath } from '$lib/paths';
 	import LdesGraph from '$lib/components/LdesGraph.svelte';
 	import type { Config } from '$lib/utils';
@@ -18,67 +12,97 @@
 	import { setLogger } from 'ldes-client';
 	import { Button } from 'flowbite-svelte';
 
-	let allLocations: { [id: string]: { name: string; value: string } } = {};
-	let allNodes: { [id: string]: { name: string; value: string } } = {};
-	let allSensors: { [id: string]: { name: string; value: string } } = {};
-	let allTypes: { [id: string]: { name: string; value: string } } = {};
+	type Value = { name: string; value: string };
+	type Select = { [id: string]: Value };
+	type Source = { locations: Select; nodes: Select; sensors: Select; types: Select };
 
-	let currentModal: number | undefined = undefined;
-	let currentStream: ReadableStreamDefaultReader | undefined = undefined;
+	let sources: { [name: string]: Source } = {};
+	let currentStreams: ReadableStreamDefaultReader[] = [];
 
-	function resetPlatforms(settings: Settings, updateGraphs: boolean) {
-		if (currentStream !== undefined) {
-			currentStream.cancel();
-			currentStream = undefined;
+	let allSources: { locations: Value[]; types: Value[]; sensors: Value[]; nodes: Value[] } = {
+		locations: [],
+		types: [],
+		sensors: [],
+		nodes: []
+	};
+
+	function updateSettings(settings: Settings, addGraphs = false) {
+		const settingNames = new Set(settings.map((x) => x.name));
+
+		for (const sourceName of Object.keys(sources)) {
+			if (!settingNames.has(sourceName)) {
+				delete sources[sourceName];
+			}
 		}
-		allLocations = {};
-		allNodes = {};
-		allSensors = {};
-		allTypes = {};
-		currentStream = consumePlatforms((p) => updateFound(p, updateGraphs), settings.sensorLdes);
+
+		for (const setting of settings) {
+			if (sources[setting.name] === undefined) {
+				sources[setting.name] = { locations: {}, nodes: {}, sensors: {}, types: {} };
+				retrieveSensorLdes(setting, addGraphs);
+			}
+		}
 	}
 
+	async function retrieveSensorLdes(setting: Settings[number], updateGraphs = true) {
+		while (sources[setting.name] !== undefined) {
+			await new Promise<void>((res) =>
+				currentStreams.push(
+					consumePlatforms((p) => updateFound(p, updateGraphs, setting), setting.sensorLdes, res)
+				)
+			);
+			updateGraphs = false;
+			await new Promise((res) => setTimeout(res, 60000));
+		}
+	}
+
+	let currentModal: number | undefined = undefined;
 	let currentSettings = get(settings);
 
 	let items: { config: Config; idx: number }[] = [];
-	settings.subscribe((settings) => resetPlatforms(settings, false));
+	settings.subscribe((settings) => updateSettings(settings));
+
 	profile.subscribe((p) => {
-		console.log('Profile', p.state);
-		resetPlatforms(currentSettings, p.state.items === undefined);
+		for (const s of currentStreams) s.cancel();
+		currentStreams = [];
+		sources = {};
+		updateSettings(get(settings));
 		items = p.state.items || [];
 	});
 
 	let onServer = true;
 	onMount(async () => {
 		setLogger({});
-		currentSettings = get(settings);
 		setTimeout(() => {
-			resetPlatforms(currentSettings, false);
+			updateSettings(get(settings));
 		}, 100);
 		onServer = false;
 	});
 
 	function reset() {
 		items = [];
-		resetPlatforms(get(settings), true);
+		for (const s of currentStreams) s.cancel();
+		currentStreams = [];
+		sources = {};
+		updateSettings(get(settings), true);
 	}
-
-	let locations: { name: string; value: string }[] = [];
-	let nodes: { name: string; value: string }[] = [];
-	let types: { name: string; value: string }[] = [];
 
 	const nameMap: { [id: string]: string } = {};
 
-	function updateFound(plat: Platform, updateGraphs: boolean) {
-		console.log({ updateGraphs });
-		if (plat.location && allLocations[plat.location] === undefined) {
-			allLocations[plat.location] = {
+	function updateFound(plat: Platform, updateGraphs: boolean, setting: Settings[number]) {
+		if (sources[setting.name] === undefined) return;
+		const { locations, types, nodes, sensors } = sources[setting.name];
+
+		if (plat.location && locations[plat.location] === undefined) {
+			locations[plat.location] = {
 				name: plat.locationName || plat.location,
 				value: plat.location
 			};
 
 			if (updateGraphs) {
-				addGraphForLocation(allLocations[plat.location]);
+				addGraphForLocation(locations[plat.location], {
+					name: setting.name,
+					value: setting.dataLdes
+				});
 			}
 		}
 
@@ -86,69 +110,59 @@
 		if (
 			plat.location &&
 			plat.locationName &&
-			allLocations[plat.location] !== undefined &&
-			!allLocations[plat.location].name.startsWith(plat.locationName)
+			locations[plat.location] !== undefined &&
+			!locations[plat.location].name.startsWith(plat.locationName)
 		) {
-			allLocations[plat.location].name =
-				plat.locationName + ' / ' + allLocations[plat.location].name;
+			locations[plat.location].name = plat.locationName + ' / ' + locations[plat.location].name;
 		}
 
-		if (allNodes[plat.id.value] === undefined) {
-			allNodes[plat.id.value] = { name: plat.euid, value: plat.id.value };
+		if (nodes[plat.id.value] === undefined) {
+			nodes[plat.id.value] = { name: plat.euid, value: plat.id.value };
 		}
 
-		if (plat.prefLabel && allNodes[plat.id.value].name === plat.euid) {
-			allNodes[plat.id.value].name = plat.prefLabel;
+		if (plat.prefLabel && nodes[plat.id.value].name === plat.euid) {
+			nodes[plat.id.value].name = plat.prefLabel;
 		}
 
-		if (plat.prefLabel && !allNodes[plat.id.value].name.startsWith(plat.prefLabel)) {
-			allNodes[plat.id.value].name = plat.prefLabel + ' / ' + allNodes[plat.id.value].name;
+		if (plat.prefLabel && !nodes[plat.id.value].name.startsWith(plat.prefLabel)) {
+			nodes[plat.id.value].name = plat.prefLabel + ' / ' + nodes[plat.id.value].name;
 		}
 
 		// nameMap.update((map) => {
-		nameMap[plat.label] = allNodes[plat.id.value].name;
+		nameMap[plat.label] = nodes[plat.id.value].name;
 		// return map;
 		// });
 
 		for (const sensor of plat.sensors) {
 			// TODO: this should be isPartOf
-			if (allSensors[sensor.id.value] === undefined) {
-				allSensors[plat.id.value] = { name: sensor.label, value: sensor.id.value };
+			if (sensors[sensor.id.value] === undefined) {
+				sensors[plat.id.value] = { name: sensor.label, value: sensor.id.value };
 			}
 
-			if (allTypes[sensor.observes.id.value] === undefined) {
-				allTypes[sensor.observes.id.value] = {
+			if (types[sensor.observes.id.value] === undefined) {
+				types[sensor.observes.id.value] = {
 					name: sensor.observes.label,
 					value: sensor.observes.id.value
 				};
 			}
 		}
 
-		locations = Object.values(allLocations);
-		types = Object.values(allTypes);
-		nodes = Object.values(allNodes);
-		console.log(nodes);
+		allSources = {
+			locations: Object.values(sources).flatMap((x) => Object.values(x.locations)),
+			types: Object.values(sources).flatMap((x) => Object.values(x.types)),
+			nodes: Object.values(sources).flatMap((x) => Object.values(x.nodes)),
+			sensors: Object.values(sources).flatMap((x) => Object.values(x.sensors))
+		};
 	}
 
-	function addGraphForLocation(location: { name: string; value: string }) {
-		let nodeChild: { name: string; value: string } | undefined = undefined;
+	function addGraphForLocation(
+		location: { name: string; value: string },
+		url: { name: string; value: string }
+	) {
 		const name = location.name;
 
 		for (const item of items) {
-			const cons = item.config.constraint;
-			if (isListConstraint(cons)) {
-				for (const child of cons.children) {
-					if (isMultiConstraint(child)) {
-						const option = child.values.find((value) => value.value == location.value);
-						if (option) {
-							nodeChild = option;
-							item.config.name = name;
-							nodeChild.name = location.name;
-							return;
-						}
-					}
-				}
-			}
+			if (item.config.name === name) return;
 		}
 
 		const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -178,7 +192,7 @@
 
 		const config = {
 			config: {
-				url: currentSettings.dataLdes,
+				urls: [url],
 				name,
 				constraint
 			},
@@ -190,15 +204,30 @@
 	async function saveIt(xs: typeof items) {
 		if (onServer) return;
 		save(xs);
-		// await fetch('/app/api/state', {
-		// 	body: JSON.stringify(xs.map((x) => x.config)),
-		// 	credentials: 'include',
-		// 	method: 'POST'
-		// });
 	}
 
 	$: saveIt(items);
 	$: idx = items.map((x) => x.idx + 1).reduceRight((a, b) => (a > b ? a : b), 0);
+
+	function addGraph() {
+		items = [
+			...items,
+			{
+				config: {
+					urls: currentSettings.map((setting) => ({
+						name: setting.name,
+						value: setting.dataLdes
+					})),
+					name: 'Graph ' + idx,
+					constraint: {
+						kind: 'and',
+						children: []
+					}
+				},
+				idx
+			}
+		];
+	}
 
 	const lookup = {
 		types: TypePath,
@@ -210,15 +239,13 @@
 {#if currentModal !== undefined}
 	<LdesConfig
 		config={items[currentModal].config}
-		multiOptions={{ types, locations, nodes }}
+		multiOptions={allSources}
 		relationParameters={{ relations: defaultRelations, properties: defaultProperties }}
 		on:confirm={(c) => {
-			console.log('Got confirm', !!c);
 			if (currentModal !== undefined) {
 				items[currentModal].config = { ...c.detail };
 			}
 			currentModal = undefined;
-			console.log({ currentModal });
 		}}
 		on:cancel={() => (currentModal = undefined)}
 	/>
@@ -230,7 +257,6 @@
 			<LdesGraph
 				{lookup}
 				{nameMap}
-				url={config.config.url}
 				config={config.config}
 				on:edit={() => {
 					currentModal = i;
@@ -244,23 +270,7 @@
 		</div>
 	{/each}
 
-	<Button
-		on:click={() =>
-			(items = [
-				...items,
-				{
-					config: {
-						url: currentSettings.dataLdes,
-						name: 'Graph ' + idx,
-						constraint: {
-							kind: 'and',
-							children: []
-						}
-					},
-					idx
-				}
-			])}>New Graph</Button
-	>
+	<Button on:click={addGraph}>New Graph</Button>
 	<Button color="alternative" on:click={reset}>Reset Graphs</Button>
 </div>
 

@@ -10,7 +10,7 @@
 		type BubbleDataPoint,
 		type ChartTypeRegistry
 	} from 'chart.js';
-	import { type Config } from './config/LdesConfig.svelte';
+	import { type Config } from '$lib/utils';
 	import { addToast, enhanced_fetch, type ChartLayout, type Measurement } from '$lib/utils';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import {
@@ -24,7 +24,7 @@
 		StopSolid
 	} from 'flowbite-svelte-icons';
 	import type { Path } from '$lib/paths';
-	import { constraintToCondition, type ListConstraint } from '$lib/constraints';
+	import { constraintToCondition } from '$lib/constraints';
 	import HoverIcon from './HoverIcon.svelte';
 	import Delete from './Delete.svelte';
 	import { myFetch } from '$lib/profile';
@@ -124,7 +124,7 @@
 		dataset.data.push(<Point>(<any>{ x: measurement.date, y: measurement.result.numericValue }));
 	}
 
-	let stream: ReadableStreamDefaultReader<Member>;
+	let streams: ReadableStreamDefaultReader<Member>[] = [];
 	let count = 0;
 
 	function updateChart() {
@@ -133,12 +133,10 @@
 		});
 	}
 
-	let streaming = false;
-	async function readStream() {
-		console.log(nameMap);
-		streaming = true;
+	let streaming = 0;
+	async function readStream(stream: ReadableStreamDefaultReader) {
+		streaming += 1;
 		let el = await stream.read();
-		console.log('first member!');
 		while (el) {
 			if (el.value) {
 				count += 1;
@@ -162,7 +160,7 @@
 		addToast('Ingestion is done!');
 
 		updateChart();
-		streaming = false;
+		streaming -= 1;
 	}
 
 	async function changed(condition: any, start = false) {
@@ -171,25 +169,30 @@
 		const doStart = start || streaming;
 		if (!doStart) return;
 
-		if (stream) stream.cancel();
+		streams.forEach((s) => s.cancel());
 
 		count = 0;
 		charts = [];
+		streams = [];
 
-		const client = replicateLDES(
-			{
-				url,
-				urlIsView: true,
-				fetch: enhanced_fetch(myFetch),
-				condition
-			},
-			order
-		);
 		// Maybe this is not working
 		charts.forEach((chart) => (chart.graphData.datasets = []));
+		for (const url of config.urls) {
+			console.log('Start client from ', url.value);
+			const client = replicateLDES(
+				{
+					url: url.value,
+					urlIsView: true,
+					fetch: enhanced_fetch(myFetch),
+					condition
+				},
+				order
+			);
 
-		stream = client.stream().getReader();
-		readStream();
+			const stream = client.stream().getReader();
+			streams.push(stream);
+			readStream(stream);
+		}
 	}
 
 	function start() {
@@ -248,13 +251,8 @@
 	}
 
 	export let order: 'ascending' | 'descending' | 'none' = 'ascending';
-	export let url = 'http://localhost:3000/ldes/default/root';
 
-	export let config: Config = {
-		constraint: <ListConstraint>{ kind: 'and', children: [] },
-		name: 'placeholder',
-		url: 'http://localhost:8004/sensors/by-name/index.trig'
-	};
+	export let config: Config;
 	export let autoPlay = false;
 	export let lookup: { [id: string]: Path } = {};
 	export let layouts: ChartLayout[] = [];
@@ -266,7 +264,7 @@
 	<div class="flex items-center justify-between">
 		<div class="w-full">
 			<div class="flex items-center">
-				{#if streaming}
+				{#if streaming > 0}
 					<ArrowUpDownOutline size="xl" class="running" />
 				{:else}
 					<PlayOutline withEvents on:click={start} size="xl" class="play cursor-pointer" />
@@ -297,7 +295,7 @@
 				</div>
 			</div>
 			<p class="font-light dark:text-white">
-				From {config.url}
+				From {config.urls.map((x) => x.name).join(' and ')}
 				{count} items.
 			</p>
 		</div>
@@ -356,9 +354,6 @@
 </section>
 
 <style>
-	.hidden {
-		display: none;
-	}
 	.placeholder {
 		width: 100px;
 		height: 100px;

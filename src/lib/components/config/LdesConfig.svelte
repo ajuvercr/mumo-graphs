@@ -1,11 +1,12 @@
 <script lang="ts">
 	import type { MultiParameters, RelationParameters } from '$lib/constraints';
 	import BaseConstraint from '$lib/components/constraints/Base.svelte';
-	import { Input, Label, Button, Select } from 'flowbite-svelte';
+	import { Input, Label, Button } from 'flowbite-svelte';
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { settings } from '$lib/settings';
 	import { get } from 'svelte/store';
 	import type { Config } from '$lib/utils';
+	import MyMultiSelect from './MyMultiSelect.svelte';
 
 	export let config: Config;
 
@@ -49,6 +50,11 @@
 		window.removeEventListener('keydown', handleWindowKeyDown);
 	});
 
+	let selectSettings: MultiParameters = [];
+	settings.subscribe((settings) => {
+		selectSettings = settings.map((setting) => ({ name: setting.name, value: setting.dataLdes }));
+	});
+
 	let showDebug = false;
 </script>
 
@@ -60,11 +66,8 @@
 		</div>
 		<div>
 			<Label for="url" class="mb-2">LDES Url</Label>
-			<Select bind:value={config.url} placeholder="Add options via settings">
-				{#each $settings.dataOptions as opt}
-					<option value={opt}>{opt}</option>
-				{/each}
-			</Select>
+
+			<MyMultiSelect items={selectSettings} bind:value={config.urls} />
 		</div>
 
 		<BaseConstraint bind:constraintData={config.constraint} {multiOptions} {relationParameters} />

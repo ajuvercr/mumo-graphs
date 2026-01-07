@@ -5,11 +5,11 @@ import { BasicLens, extractShapes, type Cont } from 'rdf-lens';
 
 import platform_shape from '$lib/configs/platform_shape.ttl?raw';
 import { myFetch } from './profile';
-import type { Constraint } from './constraints';
+import type { Constraint, MultiParameters } from './constraints';
 
 export type Config = {
 	name: string;
-	url: string;
+	urls: MultiParameters;
 	constraint: Constraint;
 };
 export type Object = {
@@ -186,7 +186,8 @@ export type Platform = {
 
 export function consumePlatforms(
 	onPlatform: (pl: Platform) => void,
-	url = 'http://localhost:8000/by-name/index.trig'
+	url: string,
+	onDone: () => void
 ): ReadableStreamDefaultReader {
 	console.log({ url });
 	const shapes = extractShapes(new Parser().parse(platform_shape));
@@ -206,15 +207,12 @@ export function consumePlatforms(
 	(async () => {
 		let mem = await stream.read();
 		while (mem && !mem.done) {
-			console.log('Got member');
-
 			const pl = platform.execute(mem.value);
 			onPlatform(pl);
 
 			mem = await stream.read();
 		}
-
-		console.log('Finished');
+		onDone();
 	})();
 
 	return stream;
